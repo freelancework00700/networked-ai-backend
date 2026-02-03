@@ -1,39 +1,56 @@
-name: CI/CD for NetworkedAI API
+name: Deploy
 
 on:
   push:
     branches:
-      - production
+      - main
+      - development
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
+
     steps:
-      - name: Pull latest code
-        run: |
-          cd /home/di/networked-ai-production/NetworkedAI_API
-          git pull origin production
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm use 22
-          cd /home/di/networked-ai-production/NetworkedAI_API
-          npm install
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
-      - name: Build project
-        run: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm use 22
-          cd /home/di/networked-ai-production/NetworkedAI_API
-          npm run build
+      # Deploy Production
+      - name: Deploy to Production (main)
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OVH_HOST }}
+          port: ${{ secrets.OVH_PORT }}
+          key: ${{ secrets.OVH_SSH_KEY }}
+          username: ${{ secrets.OVH_USER }}
+          passphrase: ${{ secrets.OVH_SSH_KEY_PASSPHRASE }}
+          script: |
+            cd /home/ubuntu/projects/networked-ai/production/backend || exit 1 || exit 1
+            git fetch --all
+            git reset --hard origin/main
+            npm install
+            npm run build
+            pm2 restart 0
 
-      - name: Reload PM2 Service
-        run: |
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-          nvm use 22
-          pm2 reload 'Networked_AI_Prod_API_20113'
-
+      # Deploy DEVELOPMENT
+      - name: Deploy to Staging (development)
+        if: github.ref == 'refs/heads/development'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.OVH_HOST }}
+          port: ${{ secrets.OVH_PORT }}
+          key: ${{ secrets.OVH_SSH_KEY }}
+          username: ${{ secrets.OVH_USER }}
+          passphrase: ${{ secrets.OVH_SSH_KEY_PASSPHRASE }}
+          script: |
+            cd /home/ubuntu/projects/networked-ai/development/backend || exit 1 || exit 1
+            git fetch --all
+            git reset --hard origin/development
+            npm install
+            npm run build
+            pm2 restart 1
