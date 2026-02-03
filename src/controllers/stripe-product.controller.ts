@@ -116,7 +116,7 @@ export const updateStripeProduct = async (req: Request, res: Response, next: Nex
         }
 
         // Step 1: Get database product by ID
-        const dbProduct = await stripeProductService.getStripeProductById(productId, transaction);
+        const dbProduct = await stripeProductService.getStripeProductById(productId as string, transaction);
         if (!dbProduct) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.stripe.productNotFoundInDatabase);
@@ -254,7 +254,7 @@ export const getStripeProductById = async (req: Request, res: Response, next: Ne
             return sendBadRequestResponse(res, responseMessages.stripe.productIdRequired);
         }
 
-        const product = await stripeProductService.getStripeProductByIdWithRelations(productId, authenticatedUserId);
+        const product = await stripeProductService.getStripeProductByIdWithRelations(productId as string, authenticatedUserId);
 
         if (!product) {
             return sendNotFoundResponse(res, responseMessages.stripe.productNotFound);
@@ -285,7 +285,7 @@ export const getUserStripeProducts = async (req: Request, res: Response, next: N
         
         if (userId) {
             // If userId is provided in params, use it (public endpoint)
-            targetUserId = userId;
+            targetUserId = userId as string;
         } else if (authenticatedUser) {
             // If no userId in params but user is authenticated, use authenticated user's ID
             targetUserId = authenticatedUser.id;
@@ -334,7 +334,7 @@ export const getPlanSubscribers = async (req: Request, res: Response, next: Next
 
         // Verify product exists and belongs to the authenticated user
         const user = res.locals.auth?.user;
-        const product = await stripeProductService.getStripeProductById(productId);
+        const product = await stripeProductService.getStripeProductById(productId as string);
 
         if (!product) {
             return sendNotFoundResponse(res, responseMessages.stripe.productNotFound);
@@ -346,7 +346,7 @@ export const getPlanSubscribers = async (req: Request, res: Response, next: Next
         }
 
         const result = await stripeProductService.getPlanSubscribersPaginated(
-            productId,
+            productId as string,
             Number(page),
             Number(limit),
             user?.id || null
@@ -373,7 +373,7 @@ export const deleteStripeProduct = async (req: Request, res: Response, next: Nex
         }
 
         // Step 1: Get database product by ID
-        const dbProduct = await stripeProductService.getStripeProductById(productId, transaction);
+        const dbProduct = await stripeProductService.getStripeProductById(productId as string, transaction);
         if (!dbProduct) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.stripe.productNotFoundInDatabase);
@@ -407,7 +407,7 @@ export const deleteStripeProduct = async (req: Request, res: Response, next: Nex
         }
 
         // Step 5: Soft delete product in database
-        await stripeProductService.deleteStripeProduct(productId, user.id, transaction);
+        await stripeProductService.deleteStripeProduct(productId as string, user.id, transaction);
 
         // Step 6: Soft delete all associated prices in database
         const dbPrices = await stripePriceService.getStripePricesByProductId(dbProduct.id, transaction);

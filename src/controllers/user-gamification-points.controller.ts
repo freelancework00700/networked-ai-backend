@@ -15,7 +15,7 @@ export const getUserGamificationPointsByUserId = async (req: Request, res: Respo
     try {
         const { userId } = req.params;
 
-        const points = await userGamificationPointsService.getUserGamificationPointsByUserId(userId);
+        const points = await userGamificationPointsService.getUserGamificationPointsByUserId(userId as string);
         if (!points || points.length === 0) {
             return sendSuccessResponse(res, responseMessages.userGamificationPoints.notFound, []);
         }
@@ -33,7 +33,7 @@ export const getUserGamificationPointsById = async (req: Request, res: Response,
     try {
         const { id } = req.params;
 
-        const points = await userGamificationPointsService.getUserGamificationPointsById(id);
+        const points = await userGamificationPointsService.getUserGamificationPointsById(id as string);
         if (!points) {
             return sendNotFoundResponse(res, responseMessages.userGamificationPoints.notFoundSingle);
         }
@@ -51,7 +51,7 @@ export const getTotalEarnedPointsByUserId = async (req: Request, res: Response, 
     try {
         const { userId } = req.params;
 
-        const totalPoints = await userGamificationPointsService.getTotalEarnedPointsByUserId(userId);
+        const totalPoints = await userGamificationPointsService.getTotalEarnedPointsByUserId(userId as string);
         return sendSuccessResponse(res, responseMessages.userGamificationPoints.totalPointsRetrieved, { total_points: totalPoints });
     } catch (error) {
         loggerService.error(`Error getting total earned points: ${error}`);
@@ -150,13 +150,13 @@ export const updateUserGamificationPoints = async (req: Request, res: Response, 
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const existingPoints = await userGamificationPointsService.getUserGamificationPointsById(id, transaction);
+        const existingPoints = await userGamificationPointsService.getUserGamificationPointsById(id as string, transaction);
         if (!existingPoints) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.userGamificationPoints.notFoundSingle);
         }
 
-        await userGamificationPointsService.updateUserGamificationPoints(id, req.body, user.id, transaction);
+        await userGamificationPointsService.updateUserGamificationPoints(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.userGamificationPoints.updated);
@@ -175,13 +175,13 @@ export const deleteUserGamificationPoints = async (req: Request, res: Response, 
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const existingPoints = await userGamificationPointsService.getUserGamificationPointsById(id, transaction);
+        const existingPoints = await userGamificationPointsService.getUserGamificationPointsById(id as string, transaction);
         if (!existingPoints) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.userGamificationPoints.notFoundSingle);
         }
 
-        await userGamificationPointsService.deleteUserGamificationPoints(id, user.id, transaction);
+        await userGamificationPointsService.deleteUserGamificationPoints(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.userGamificationPoints.deleted);

@@ -52,7 +52,7 @@ export const getHobbyById = async (req: Request, res: Response, next: NextFuncti
     try {
         const { id } = req.params;
 
-        const hobby = await hobbyService.getHobbyById(id);
+        const hobby = await hobbyService.getHobbyById(id as string);
         if (!hobby) {
             return sendNotFoundResponse(res, responseMessages.hobby.notFoundSingle);
         }
@@ -100,19 +100,19 @@ export const updateHobby = async (req: Request, res: Response, next: NextFunctio
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const hobby = await hobbyService.getHobbyById(id, transaction);
+        const hobby = await hobbyService.getHobbyById(id as string, transaction);
         if (!hobby) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.hobby.notFoundSingle);
         }
 
-        const existingHobby = await hobbyService.getHobbyByName(req.body.name, id);
+        const existingHobby = await hobbyService.getHobbyByName(req.body.name, id as string);
         if (existingHobby) {
             await transaction.rollback();
             return sendConflictErrorResponse(res, responseMessages.hobby.alreadyExists);
         }
 
-        await hobbyService.updateHobby(id, req.body, user.id, transaction);
+        await hobbyService.updateHobby(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.hobby.updated);
@@ -131,13 +131,13 @@ export const deleteHobby = async (req: Request, res: Response, next: NextFunctio
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const hobby = await hobbyService.getHobbyById(id, transaction);
+        const hobby = await hobbyService.getHobbyById(id as string, transaction);
         if (!hobby) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.hobby.notFoundSingle);
         }
 
-        await hobbyService.deleteHobby(id, user.id, transaction);
+        await hobbyService.deleteHobby(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.hobby.deleted);

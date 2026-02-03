@@ -87,7 +87,7 @@ export const updateEventAttendee = async (req: Request, res: Response, next: Nex
 
         // Update the attendee
         const updatedAttendee = await eventAttendeesService.updateEventAttendee(
-            id,
+            id as string,
             req.body,
             authUserId,
             transaction
@@ -146,7 +146,7 @@ export const deleteEventAttendee = async (req: Request, res: Response, next: Nex
             return sendUnauthorizedResponse(res, responseMessages.user.forbidden);
         }
 
-        const deletedAttendee = await eventAttendeesService.softDeleteEventAttendee(id, authUserId, transaction);
+        const deletedAttendee = await eventAttendeesService.softDeleteEventAttendee(id as string, authUserId, transaction);
 
         if (!deletedAttendee) {
             await transaction.rollback();

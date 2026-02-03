@@ -15,14 +15,14 @@ export const sendRSVPRequest = async (req: Request, res: Response, next: NextFun
         const authUserId = res.locals.auth?.user?.id ?? null;
 
         // Check if event exists
-        const event = await eventService.getEventByIdOrSlug(eventId);
+        const event = await eventService.getEventByIdOrSlug(eventId as string);
         if (!event) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
 
         // Check if approval is required
-        const eventSettings = await eventService.getEventSettings(eventId);
+        const eventSettings = await eventService.getEventSettings(eventId as string);
         if (!eventSettings) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
@@ -34,7 +34,7 @@ export const sendRSVPRequest = async (req: Request, res: Response, next: NextFun
         }
 
         // Check if rsvp request already exists
-        const existingRequest = await rsvpRequestService.isRSVPRequestExists(eventId, authUserId);
+        const existingRequest = await rsvpRequestService.isRSVPRequestExists(eventId as string, authUserId);
         if (existingRequest) {
             if (existingRequest.status === RSVPRequestStatus.PENDING) {
                 await transaction.rollback();
@@ -47,7 +47,7 @@ export const sendRSVPRequest = async (req: Request, res: Response, next: NextFun
         }
         
         // Send RSVP request
-        const rsvpRequest = await rsvpRequestService.sendRSVPRequest(eventId, authUserId, transaction);
+        const rsvpRequest = await rsvpRequestService.sendRSVPRequest(eventId as string, authUserId, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.event.rsvpRequestSent, { rsvp_request: rsvpRequest });
@@ -68,12 +68,12 @@ export const getPendingRSVPRequests = async (req: Request, res: Response, next: 
         const limit = Number(req.query.limit) || 20;
 
         // Check if user is event host
-        const isHost = await rsvpRequestService.isEventHost(authUserId, eventId);
+        const isHost = await rsvpRequestService.isEventHost(authUserId, eventId as string);
         if (!isHost) {
             return sendBadRequestResponse(res, responseMessages.event.onlyEventHostsCanViewRSVPRequests);
         }
 
-        const result = await rsvpRequestService.getPendingRSVPRequests(eventId, page, limit);
+        const result = await rsvpRequestService.getPendingRSVPRequests(eventId as string, page, limit);
         if (result.data.length === 0) {
             return sendSuccessResponse(res, responseMessages.event.noPendingRSVPRequests, result);
         }
@@ -95,12 +95,12 @@ export const getProcessedRSVPRequests = async (req: Request, res: Response, next
         const limit = Number(req.query.limit) || 20;
 
         // Check if user is event host
-        const isHost = await rsvpRequestService.isEventHost(authUserId, eventId);
+        const isHost = await rsvpRequestService.isEventHost(authUserId, eventId as string);
         if (!isHost) {
             return sendBadRequestResponse(res, responseMessages.event.onlyEventHostsCanViewRSVPRequests);
         }
 
-        const result = await rsvpRequestService.getProcessedRSVPRequests(eventId, page, limit);
+        const result = await rsvpRequestService.getProcessedRSVPRequests(eventId as string, page, limit);
         if (result.data.length === 0) {
             return sendSuccessResponse(res, responseMessages.event.noProcessedRSVPRequests, result);
         }
@@ -122,21 +122,21 @@ export const approveRejectRSVPRequest = async (req: Request, res: Response, next
         const { action } = req.body;
 
         // Check if user is event host
-        const isHost = await rsvpRequestService.isEventHost(authUserId, eventId);
+        const isHost = await rsvpRequestService.isEventHost(authUserId, eventId as string);
         if (!isHost) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.event.onlyEventHostsCanApproveRejectRSVPRequests);
         }
 
         // Check if RSVP request exists and is pending
-        const rsvpRequestExists = await rsvpRequestService.checkPendingRSVPRequest(eventId, requestId, transaction);
+        const rsvpRequestExists = await rsvpRequestService.checkPendingRSVPRequest(eventId as string, requestId as string, transaction);
         if (!rsvpRequestExists) {
             await transaction.rollback();
             return sendConflictErrorResponse(res, responseMessages.event.noPendingRSVPRequests);
         }
 
         // Approve or reject RSVP request
-        await rsvpRequestService.approveRejectRSVPRequest(eventId, requestId, action, authUserId, transaction);
+        await rsvpRequestService.approveRejectRSVPRequest(eventId as string, requestId as string, action, authUserId, transaction);
 
         // Reload RSVP request
         await rsvpRequestExists.reload();

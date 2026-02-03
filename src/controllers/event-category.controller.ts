@@ -46,7 +46,7 @@ export const getEventCategoryById = async (req: Request, res: Response, next: Ne
     try {
         const { id } = req.params;
 
-        const eventCategory = await eventCategoryService.getEventCategoryById(id);
+        const eventCategory = await eventCategoryService.getEventCategoryById(id as string);
         if (!eventCategory) {
             return sendNotFoundResponse(res, responseMessages.eventCategory.notFoundSingle);
         }
@@ -94,19 +94,19 @@ export const updateEventCategory = async (req: Request, res: Response, next: Nex
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const eventCategory = await eventCategoryService.getEventCategoryById(id);
+        const eventCategory = await eventCategoryService.getEventCategoryById(id as string);
         if (!eventCategory) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.eventCategory.notFoundSingle);
         }
 
-        const existingEventCategory = await eventCategoryService.getEventCategoryByName(req.body.name, id);
+        const existingEventCategory = await eventCategoryService.getEventCategoryByName(req.body.name, id as string);
         if (existingEventCategory) {
             await transaction.rollback();
             return sendConflictErrorResponse(res, responseMessages.eventCategory.alreadyExists);
         }
 
-        await eventCategoryService.updateEventCategory(id, req.body, user.id, transaction);
+        await eventCategoryService.updateEventCategory(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.eventCategory.updated);
@@ -125,13 +125,13 @@ export const deleteEventCategory = async (req: Request, res: Response, next: Nex
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const eventCategory = await eventCategoryService.getEventCategoryById(id);
+        const eventCategory = await eventCategoryService.getEventCategoryById(id as string);
         if (!eventCategory) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.eventCategory.notFoundSingle);
         }
 
-        await eventCategoryService.deleteEventCategory(id, user.id, transaction);
+        await eventCategoryService.deleteEventCategory(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.eventCategory.deleted);

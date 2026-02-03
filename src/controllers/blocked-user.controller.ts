@@ -25,27 +25,27 @@ export const blockUser = async (req: Request, res: Response, next: NextFunction)
         }
 
         // Check if peer exists
-        const peer = await userService.findUserById(peerId);
+        const peer = await userService.findUserById(peerId as string);
         if (!peer) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.blockedUser.userToBlockNotFound);
         }
 
         // Check if already blocked
-        const isAlreadyBlocked = await blockedUserService.checkIfBlocked(userId, peerId);
+        const isAlreadyBlocked = await blockedUserService.checkIfBlocked(userId, peerId as string);
         if (isAlreadyBlocked) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.blockedUser.userAlreadyBlocked);
         }
 
         // Delete any existing connection requests between these users
-        await networkConnectionService.deleteRequestsBetweenUsers(userId, peerId, userId, transaction);
+        await networkConnectionService.deleteRequestsBetweenUsers(userId, peerId as string, userId, transaction);
 
         // Delete any existing network connections between these users
-        await networkConnectionService.deleteConnectionBetweenUsers(userId, peerId, userId, transaction);
+        await networkConnectionService.deleteConnectionBetweenUsers(userId, peerId as string, userId, transaction);
 
         // Block the user
-        const blocked = await blockedUserService.blockUser(userId, peerId, userId, transaction);
+        const blocked = await blockedUserService.blockUser(userId, peerId as string, userId, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.blockedUser.userBlockedSuccess, {
@@ -70,7 +70,7 @@ export const unblockUser = async (req: Request, res: Response, next: NextFunctio
         const peerId = req.params.peer_id;
 
         // Find the blocked user
-        const blockedUser = await blockedUserService.findBlockedUser(userId, peerId);
+        const blockedUser = await blockedUserService.findBlockedUser(userId, peerId as string);
         if (!blockedUser) {
             return sendBadRequestResponse(res, responseMessages.blockedUser.userNotBlocked);
         }
@@ -121,7 +121,7 @@ export const checkIfBlocked = async (req: Request, res: Response, next: NextFunc
         const userId = authenticatedUser.id;
 
         // Check if user is blocked
-        const isBlocked = await blockedUserService.checkIfBlocked(userId, peerId);
+        const isBlocked = await blockedUserService.checkIfBlocked(userId, peerId as string);
 
         return sendSuccessResponse(res, responseMessages.blockedUser.retrieved, {
             is_blocked: isBlocked

@@ -112,13 +112,13 @@ export const unshareFeed = async (req: Request, res: Response, next: NextFunctio
         const { feedId, peerId } = req.params;
 
         // Check if feed exists
-        const feed = await feedService.getFeedById(feedId, authenticatedUser.id, false);
+        const feed = await feedService.getFeedById(feedId as string, authenticatedUser.id, false);
         if (!feed) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedShared.notFound);
         }
 
-        const unshared = await feedSharedService.removeShared(feedId, authenticatedUser.id, peerId, authenticatedUser.id, transaction);
+        const unshared = await feedSharedService.removeShared(feedId as string, authenticatedUser.id, peerId as string, authenticatedUser.id, transaction);
 
         if (!unshared) {
             await transaction.rollback();
@@ -140,12 +140,12 @@ export const getFeedShares = async (req: Request, res: Response, next: NextFunct
         const { feedId } = req.params;
 
         // Check if feed exists
-        const feed = await feedService.getFeedById(feedId, null, false);
+        const feed = await feedService.getFeedById(feedId as string, null, false);
         if (!feed) {
             return sendNotFoundResponse(res, responseMessages.feedShared.notFound);
         }
 
-        const shares = await feedSharedService.findByFeedId(feedId);
+        const shares = await feedSharedService.findByFeedId(feedId as string);
 
         return sendSuccessResponse(res, responseMessages.feedShared.retrieved, { content: shares, count: shares.length });
     } catch (error) {
@@ -187,12 +187,12 @@ export const checkIfFeedShared = async (req: Request, res: Response, next: NextF
         const { feedId, peerId } = req.params;
 
         // Check if feed exists
-        const feed = await feedService.getFeedById(feedId, authenticatedUser.id, false);
+        const feed = await feedService.getFeedById(feedId as string, authenticatedUser.id, false);
         if (!feed) {
             return sendNotFoundResponse(res, responseMessages.feedShared.notFound);
         }
 
-        const isShared = await feedSharedService.checkIfShared(feedId, authenticatedUser.id, peerId);
+        const isShared = await feedSharedService.checkIfShared(feedId as string, authenticatedUser.id, peerId as string);
 
         return sendSuccessResponse(res, responseMessages.feedShared.retrieved, { content: isShared });
     } catch (error) {

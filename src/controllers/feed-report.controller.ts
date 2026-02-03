@@ -44,7 +44,7 @@ export const updateReport = async (req: Request, res: Response, next: NextFuncti
         const { id } = req.params;
         const { reason_id, reason } = req.body;
 
-        const existing = await feedReportService.findById(id);
+        const existing = await feedReportService.findById(id as string);
         if (!existing) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedReported.notFound);
@@ -56,7 +56,7 @@ export const updateReport = async (req: Request, res: Response, next: NextFuncti
             return sendUnauthorizedResponse(res, responseMessages.feedReported.forbidden);
         }
 
-        const updated = await feedReportService.update(id, {
+        const updated = await feedReportService.update(id as string, {
             reason_id: reason_id || null,
             reason: reason || null,
             updated_by: authenticatedUser.id,
@@ -83,7 +83,7 @@ export const deleteReport = async (req: Request, res: Response, next: NextFuncti
         const authenticatedUser = res.locals.auth?.user;
         const { id } = req.params;
 
-        const existing = await feedReportService.findById(id);
+        const existing = await feedReportService.findById(id as string);
         if (!existing) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedReported.notFound);
@@ -95,7 +95,7 @@ export const deleteReport = async (req: Request, res: Response, next: NextFuncti
             return sendUnauthorizedResponse(res, responseMessages.feedReported.forbidden);
         }
 
-        const deleted = await feedReportService.softDelete(id, authenticatedUser.id, transaction);
+        const deleted = await feedReportService.softDelete(id as string, authenticatedUser.id, transaction);
         if (!deleted) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedReported.notFound);
@@ -114,7 +114,7 @@ export const deleteReport = async (req: Request, res: Response, next: NextFuncti
 export const getReportById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-        const report = await feedReportService.findById(id);
+        const report = await feedReportService.findById(id as string);
         if (!report) {
             return sendNotFoundResponse(res, responseMessages.feedReported.notFound);
         }
@@ -141,7 +141,7 @@ export const getAllReportByFeedAndUserId = async (req: Request, res: Response, n
 export const getReportsByFeed = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { feedId } = req.params;
-        const reports = await feedReportService.findByFeedId(feedId);
+        const reports = await feedReportService.findByFeedId(feedId as string);
         return sendSuccessResponse(res, responseMessages.feedReported.retrieved, { content: reports, count: reports.length });
     } catch (error) {
         loggerService.error(`Error getting feed reports by feed: ${error}`);

@@ -258,7 +258,7 @@ export const updateChatRoom = async (req: Request, res: Response, next: NextFunc
         const { room_id } = req.params;
         const { name, profile_image } = req.body;
 
-        const chatRoom = await chatRoomService.findRoomByIdActive(room_id, transaction);
+        const chatRoom = await chatRoomService.findRoomByIdActive(room_id as string, transaction);
         if (!chatRoom) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
@@ -270,7 +270,7 @@ export const updateChatRoom = async (req: Request, res: Response, next: NextFunc
             return sendBadRequestResponse(res, responseMessages.chatRoom.groupOnlyUpdateAllowed);
         }
 
-        const userInRoom = await chatRoomService.checkUserInRoom(room_id, authenticatedUserId, transaction);
+        const userInRoom = await chatRoomService.checkUserInRoom(room_id as string, authenticatedUserId, transaction);
         if (!userInRoom) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.message.userNotInRoom);
@@ -303,10 +303,10 @@ export const updateChatRoom = async (req: Request, res: Response, next: NextFunc
 
         await transaction.commit();
 
-        await emitRoomUpdated(room_id);
+        await emitRoomUpdated(room_id as string);
 
         const roomInfo = await chatRoomService.getRoomInfoWithUsersAndLastMessage(
-            room_id,
+            room_id as string,
             chatRoom.user_ids,
             chatRoom.deleted_users || []
         );
@@ -325,12 +325,12 @@ export const getRoom = async (req: Request, res: Response, next: NextFunction) =
     try {
         const { room_id } = req.params;
 
-        const room = await chatRoomService.findRoomByIdActive(room_id);
+        const room = await chatRoomService.findRoomByIdActive(room_id as string);
         if (!room) {
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
 
-        const roomInfo = await chatRoomService.getRoomInfoWithUsersAndLastMessage(room_id, room.user_ids, room.deleted_users);
+        const roomInfo = await chatRoomService.getRoomInfoWithUsersAndLastMessage(room_id as string, room.user_ids, room.deleted_users);
 
         return sendSuccessResponse(res, responseMessages.chatRoom.retrieved, roomInfo);
     } catch (error) {
@@ -345,7 +345,7 @@ export const getRoomByEventId = async (req: Request, res: Response, next: NextFu
     try {
         const { event_id } = req.params;
 
-        const room = await chatRoomService.findRoomByEventId(event_id);
+        const room = await chatRoomService.findRoomByEventId(event_id as string);
         if (!room) {
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
@@ -435,19 +435,19 @@ export const deleteRoom = async (req: Request, res: Response, next: NextFunction
         const authenticatedUser = res.locals.auth?.user;
         const { room_id, user_id } = req.params;
 
-        const room = await chatRoomService.findRoomByIdActive(room_id, transaction);
+        const room = await chatRoomService.findRoomByIdActive(room_id as string, transaction);
         if (!room) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
 
-        const user = await chatRoomService.checkUserInRoom(room_id, user_id, transaction);
+        const user = await chatRoomService.checkUserInRoom(room_id as string, user_id as string, transaction);
         if (!user) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
 
-        const isUserDeleted = room.deleted_users?.includes(user_id);
+        const isUserDeleted = room.deleted_users?.includes(user_id as string);
         if (isUserDeleted) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.chatRoom.userAlreadyDeleted);
@@ -457,13 +457,13 @@ export const deleteRoom = async (req: Request, res: Response, next: NextFunction
             ? room.user_ids.filter((id: string) => String(id) !== String(user_id))
             : room.user_ids;
         const updatedDeletedUsers = room.deleted_users ? [...room.deleted_users, String(user_id)] : [String(user_id)];
-        await chatRoomService.updateChatRoom(room_id, {
+        await chatRoomService.updateChatRoom(room_id as string, {
             user_ids: updatedUserIds,
             deleted_users: updatedDeletedUsers,
             updated_by: authenticatedUser?.id || null,
         } as any, transaction);
 
-        await emitRoomUpdated(room_id, transaction);
+        await emitRoomUpdated(room_id as string, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.chatRoom.deleted);
@@ -482,7 +482,7 @@ export const getRoomByUser = async (req: Request, res: Response, next: NextFunct
         const { page, limit, search, filter } = req.query;
 
         const results = await chatRoomService.findRoomsByUserId(
-            user_id,
+            user_id as string,
             Number(page) || 1,
             Number(limit) || 20,
             search as string,

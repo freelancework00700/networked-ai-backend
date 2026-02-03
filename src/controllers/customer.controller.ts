@@ -50,7 +50,7 @@ export const getAllCustomers = async (req: Request, res: Response, next: NextFun
 export const getCustomerById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.auth?.user?.id;
-        const customer = await customerService.getCustomerById(req.params.id, userId);
+        const customer = await customerService.getCustomerById(req.params.id as string, userId);
 
         if (!customer) return sendNotFoundResponse(res, responseMessages.customer.notFoundSingle);
         return sendSuccessResponse(res, responseMessages.customer.retrievedSingle, withTagAndSegmentIds(customer));
@@ -85,17 +85,17 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const existing = await customerService.getCustomerById(req.params.id, userId, transaction);
+        const existing = await customerService.getCustomerById(req.params.id as string, userId, transaction);
         if (!existing) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.customer.notFoundSingle);
         }
         const { tag_ids, segment_ids, ...data } = req.body;
-        if (Object.keys(data).length) await customerService.updateCustomer(req.params.id, data, userId, transaction);
-        if (tag_ids !== undefined) await customerService.setCustomerTags(req.params.id, Array.isArray(tag_ids) ? tag_ids : [], transaction);
-        if (segment_ids !== undefined) await customerService.setCustomerSegments(req.params.id, Array.isArray(segment_ids) ? segment_ids : [], transaction);
+        if (Object.keys(data).length) await customerService.updateCustomer(req.params.id as string, data, userId, transaction);
+        if (tag_ids !== undefined) await customerService.setCustomerTags(req.params.id as string, Array.isArray(tag_ids) ? tag_ids : [], transaction);
+        if (segment_ids !== undefined) await customerService.setCustomerSegments(req.params.id as string, Array.isArray(segment_ids) ? segment_ids : [], transaction);
         await transaction.commit();
-        const updated = await customerService.getCustomerById(req.params.id, userId);
+        const updated = await customerService.getCustomerById(req.params.id as string, userId);
         return sendSuccessResponse(res, responseMessages.customer.updated, withTagAndSegmentIds(updated));
     } catch (error) {
         await transaction.rollback();
@@ -109,12 +109,12 @@ export const deleteCustomer = async (req: Request, res: Response, next: NextFunc
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const customer = await customerService.getCustomerById(req.params.id, userId, transaction);
+        const customer = await customerService.getCustomerById(req.params.id as string, userId, transaction);
         if (!customer) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.customer.notFoundSingle);
         }
-        await customerService.deleteCustomer(req.params.id, userId, transaction);
+        await customerService.deleteCustomer(req.params.id as string, userId, transaction);
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.customer.deleted, { id: req.params.id });
     } catch (error) {

@@ -246,7 +246,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         }
 
         // Check if user exists
-        const existingUser = await userService.findUserById(userId);
+        const existingUser = await userService.findUserById(userId as string);
         if (!existingUser) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.user.notFoundSingle);
@@ -259,7 +259,7 @@ export const deleteUser = async (req: Request, res: Response, next: NextFunction
         }
 
         // Soft delete user
-        await userService.softDeleteUser(userId, authenticatedUser.id, transaction);
+        await userService.softDeleteUser(userId as string, authenticatedUser.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.user.deleted);
@@ -280,7 +280,7 @@ export const getUserByIdOrUsername = async (req: Request, res: Response, next: N
         const { value } = req.params;
         const authenticatedUser = res.locals.auth?.user;
 
-        const user = await userService.findUserByIdOrUsername(value);
+        const user = await userService.findUserByIdOrUsername(value as string);
         if (!user) {
             return sendNotFoundResponse(res, responseMessages.user.notFoundSingle);
         }

@@ -52,7 +52,7 @@ export const getGamificationCategoryById = async (req: Request, res: Response, n
     try {
         const { id } = req.params;
 
-        const category = await gamificationCategoryService.getGamificationCategoryById(id);
+        const category = await gamificationCategoryService.getGamificationCategoryById(id as string);
         if (!category) {
             return sendNotFoundResponse(res, responseMessages.gamificationCategory.notFoundSingle);
         }
@@ -100,21 +100,21 @@ export const updateGamificationCategory = async (req: Request, res: Response, ne
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const category = await gamificationCategoryService.getGamificationCategoryById(id, transaction);
+        const category = await gamificationCategoryService.getGamificationCategoryById(id as string, transaction);
         if (!category) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.gamificationCategory.notFoundSingle);
         }
 
         if (req.body.category_name) {
-            const existingCategory = await gamificationCategoryService.getGamificationCategoryByName(req.body.category_name, id);
+            const existingCategory = await gamificationCategoryService.getGamificationCategoryByName(req.body.category_name, id as string);
             if (existingCategory) {
                 await transaction.rollback();
                 return sendConflictErrorResponse(res, responseMessages.gamificationCategory.alreadyExists);
             }
         }
 
-        await gamificationCategoryService.updateGamificationCategory(id, req.body, user.id, transaction);
+        await gamificationCategoryService.updateGamificationCategory(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.gamificationCategory.updated);
@@ -133,13 +133,13 @@ export const deleteGamificationCategory = async (req: Request, res: Response, ne
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const category = await gamificationCategoryService.getGamificationCategoryById(id, transaction);
+        const category = await gamificationCategoryService.getGamificationCategoryById(id as string, transaction);
         if (!category) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.gamificationCategory.notFoundSingle);
         }
 
-        await gamificationCategoryService.deleteGamificationCategory(id, user.id, transaction);
+        await gamificationCategoryService.deleteGamificationCategory(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.gamificationCategory.deleted);

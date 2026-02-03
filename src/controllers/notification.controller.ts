@@ -71,7 +71,7 @@ export const markNotificationAsRead = async (req: Request, res: Response, next: 
             return sendBadRequestResponse(res, responseMessages.notification.notificationIdRequired);
         }
 
-        const notification = await notificationService.markNotificationAsRead(id, authenticatedUser.id);
+        const notification = await notificationService.markNotificationAsRead(id as string, authenticatedUser.id);
 
         if (!notification) {
             return sendNotFoundResponse(res, responseMessages.notification.notFoundSingle);

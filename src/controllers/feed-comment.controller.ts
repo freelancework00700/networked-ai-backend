@@ -103,7 +103,7 @@ export const updateComment = async (req: Request, res: Response, next: NextFunct
         const { comment, mention_ids } = req.body;
 
         // Check if comment exists
-        const existingComment = await feedCommentService.findById(id);
+        const existingComment = await feedCommentService.findById(id as string);
         if (!existingComment) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedCommented.notFound);
@@ -115,13 +115,13 @@ export const updateComment = async (req: Request, res: Response, next: NextFunct
             return sendUnauthorizedResponse(res, responseMessages.feedCommented.forbidden);
         }
 
-        await feedCommentService.updateComment(id, comment, authenticatedUser.id, mention_ids || undefined, transaction);
+        await feedCommentService.updateComment(id as string, comment, authenticatedUser.id, mention_ids || undefined, transaction);
         
         await transaction.commit();
 
         // Fetch the updated comment with relations
-        const commentWithRelations = await feedCommentService.findById(id, authenticatedUser.id, true);
-        await emitFeedCommentUpdated(id, existingComment.feed_id, feedCommentService, CommentLike);
+        const commentWithRelations = await feedCommentService.findById(id as string, authenticatedUser.id, true);
+        await emitFeedCommentUpdated(id as string, existingComment.feed_id, feedCommentService, CommentLike);
 
         return sendSuccessResponse(res, responseMessages.feedCommented.commentUpdated, { content: commentWithRelations });
     } catch (error) {
@@ -139,7 +139,7 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
         const { id } = req.params;
 
         // Check if comment exists
-        const existingComment = await feedCommentService.findById(id);
+        const existingComment = await feedCommentService.findById(id as string);
         if (!existingComment) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedCommented.notFound);
@@ -151,7 +151,7 @@ export const deleteComment = async (req: Request, res: Response, next: NextFunct
             return sendUnauthorizedResponse(res, responseMessages.feedCommented.forbidden);
         }
 
-        const deleted = await feedCommentService.softDelete(id, authenticatedUser.id, transaction);
+        const deleted = await feedCommentService.softDelete(id as string, authenticatedUser.id, transaction);
 
         if (!deleted) {
             await transaction.rollback();
@@ -184,12 +184,12 @@ export const getAllCommentsByFeedId = async (req: Request, res: Response, next: 
         const authUserId = res.locals.auth?.user?.id ?? null;
 
         // Check if feed exists
-        const feed = await feedService.getFeedById(feedId, null, false);
+        const feed = await feedService.getFeedById(feedId as string, null, false);
         if (!feed) {
             return sendNotFoundResponse(res, responseMessages.feedCommented.notFound);
         }
 
-        const comments = await feedCommentService.findByFeedId(feedId, includeReplies, Number(page) || 1, Number(limit) || 10);
+        const comments = await feedCommentService.findByFeedId(feedId as string, includeReplies, Number(page) || 1, Number(limit) || 10);
         const transformedComments = await feedCommentService.transformCommentsWithLike(comments.data, authUserId);
 
         return sendSuccessResponse(res, responseMessages.feedCommented.retrieved, {
@@ -209,12 +209,12 @@ export const getCommentReplies = async (req: Request, res: Response, next: NextF
         const authUserId = res.locals.auth?.user?.id ?? null;
 
         // Check if parent comment exists
-        const parentComment = await feedCommentService.findById(commentId);
+        const parentComment = await feedCommentService.findById(commentId as string);
         if (!parentComment) {
             return sendNotFoundResponse(res, responseMessages.feedCommented.notFound);
         }
 
-        const replies = await feedCommentService.findByParentCommentId(commentId);
+        const replies = await feedCommentService.findByParentCommentId(commentId as string);
         const transformedReplies = await feedCommentService.transformCommentsWithLike(replies, authUserId);
 
         return sendSuccessResponse(res, responseMessages.feedCommented.retrieved, {
@@ -233,7 +233,7 @@ export const getCommentById = async (req: Request, res: Response, next: NextFunc
         const { id } = req.params;
         const authUserId = res.locals.auth?.user?.id ?? null;
 
-        const comment = await feedCommentService.findById(id);
+        const comment = await feedCommentService.findById(id as string);
         if (!comment) {
             return sendNotFoundResponse(res, responseMessages.feedCommented.notFound);
         }
@@ -256,7 +256,7 @@ export const getUserComments = async (req: Request, res: Response, next: NextFun
         const userId = req.params.userId;
         const authUserId = res.locals.auth?.user?.id ?? null;
 
-        const comments = await feedCommentService.findByUserId(userId, Number(page) || 1, Number(limit) || 10);
+        const comments = await feedCommentService.findByUserId(userId as string, Number(page) || 1, Number(limit) || 10);
         const transformedComments = await feedCommentService.transformCommentsWithLike(comments.data, authUserId);
 
         return sendSuccessResponse(res, responseMessages.feedCommented.retrieved, {

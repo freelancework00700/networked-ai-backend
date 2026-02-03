@@ -28,7 +28,7 @@ export const getAllSegments = async (req: Request, res: Response, next: NextFunc
 export const getSegmentById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.auth?.user?.id;
-        const segment = await segmentService.getSegmentById(req.params.id, userId);
+        const segment = await segmentService.getSegmentById(req.params.id as string, userId);
         if (!segment) return sendNotFoundResponse(res, responseMessages.segment.notFoundSingle);
         return sendSuccessResponse(res, responseMessages.segment.retrievedSingle, segment);
     } catch (error) {
@@ -57,14 +57,14 @@ export const updateSegment = async (req: Request, res: Response, next: NextFunct
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const segment = await segmentService.getSegmentById(req.params.id, userId, transaction);
+        const segment = await segmentService.getSegmentById(req.params.id as string, userId, transaction);
         if (!segment) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.segment.notFoundSingle);
         }
-        await segmentService.updateSegment(req.params.id, req.body, userId, transaction);
+        await segmentService.updateSegment(req.params.id as string, req.body, userId, transaction);
         await transaction.commit();
-        const updated = await segmentService.getSegmentById(req.params.id, userId);
+        const updated = await segmentService.getSegmentById(req.params.id as string, userId);
         return sendSuccessResponse(res, responseMessages.segment.updated, updated);
     } catch (error) {
         await transaction.rollback();
@@ -78,12 +78,12 @@ export const deleteSegment = async (req: Request, res: Response, next: NextFunct
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const segment = await segmentService.getSegmentById(req.params.id, userId, transaction);
+        const segment = await segmentService.getSegmentById(req.params.id as string, userId, transaction);
         if (!segment) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.segment.notFoundSingle);
         }
-        await segmentService.deleteSegment(req.params.id, userId, transaction);
+        await segmentService.deleteSegment(req.params.id as string, userId, transaction);
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.segment.deleted, { id: req.params.id });
     } catch (error) {
@@ -100,7 +100,7 @@ export const getSegmentCustomers = async (req: Request, res: Response, next: Nex
         if (!userId) return sendNotFoundResponse(res, responseMessages.segment.notFoundSingle);
         const { id } = req.params;
         const { page, limit, search, order_by, order_direction } = req.query;
-        const result = await segmentService.getSegmentCustomersPaginated(id, userId, {
+        const result = await segmentService.getSegmentCustomersPaginated(id as string, userId, {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
             search: (search as string) || '',

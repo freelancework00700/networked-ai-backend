@@ -57,7 +57,7 @@ export const getCurrentUserTransactionById = async (
             return sendServerErrorResponse(res, responseMessages.transaction.transactionIdRequired, null);
         }
 
-        const transaction = await transactionService.getTransactionByIdForUser(id, user.id);
+        const transaction = await transactionService.getTransactionByIdForUser(id as string, user.id);
 
         if (!transaction) {
             return sendServerErrorResponse(res, responseMessages.transaction.transactionNotFound, null);

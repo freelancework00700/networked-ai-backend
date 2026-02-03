@@ -16,37 +16,37 @@ export const LikeUnlikeFeed = async (req: Request, res: Response, next: NextFunc
         const authenticatedUser = res.locals.auth?.user;
         const { feedId } = req.params;
 
-        const feed = await feedService.getFeedById(feedId, authenticatedUser.id, false);
+        const feed = await feedService.getFeedById(feedId as string, authenticatedUser.id, false);
         if (!feed) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feedLiked.notFound);
         }
 
         // Check if liked within transaction to avoid race conditions
-        const isLiked = await feedLikedService.checkIfLiked(feedId, authenticatedUser.id, transaction);
+        const isLiked = await feedLikedService.checkIfLiked(feedId as string, authenticatedUser.id, transaction);
 
         if (isLiked) {
-            const unliked = await feedLikedService.removeLiked(feedId, authenticatedUser.id, authenticatedUser.id, transaction);
+            const unliked = await feedLikedService.removeLiked(feedId as string, authenticatedUser.id, authenticatedUser.id, transaction);
             if (!unliked) {
                 await transaction.rollback();
                 return sendNotFoundResponse(res, responseMessages.feedLiked.notFound);
             }
             await transaction.commit();
 
-            await emitFeedUpdated(feedId, feedService, FeedLiked);
+            await emitFeedUpdated(feedId as string, feedService, FeedLiked);
             return sendSuccessResponse(res, responseMessages.feedLiked.unliked, { content: false });
         }
 
-        const liked = await feedLikedService.createLiked(feedId, authenticatedUser.id, authenticatedUser.id, transaction);
+        const liked = await feedLikedService.createLiked(feedId as string, authenticatedUser.id, authenticatedUser.id, transaction);
         const postOwnerId = (feed as any).user_id;
         if (postOwnerId && postOwnerId !== authenticatedUser.id) {
             const likerName = (authenticatedUser as any).name || (authenticatedUser as any).username || 'Someone';
             const postContent = (feed as any).content;
-            await notificationService.sendPostLikedNotification(postOwnerId, authenticatedUser.id, likerName, feedId, transaction, postContent);
+            await notificationService.sendPostLikedNotification(postOwnerId, authenticatedUser.id, likerName, feedId as string, transaction, postContent);
         }
         await transaction.commit();
         
-        await emitFeedUpdated(feedId, feedService, FeedLiked);
+        await emitFeedUpdated(feedId as string, feedService, FeedLiked);
         return sendSuccessResponse(res, responseMessages.feedLiked.liked, { content: true, like: liked });
     } catch (error) {
         await transaction.rollback();
@@ -64,12 +64,12 @@ export const getAllLikesByFeedId = async (req: Request, res: Response, next: Nex
         const { feedId } = req.params;
 
         // Check if feed exists
-        const feed = await feedService.getFeedById(feedId, null, false);
+        const feed = await feedService.getFeedById(feedId as string, null, false);
         if (!feed) {
             return sendNotFoundResponse(res, responseMessages.feedLiked.notFound);
         }
 
-        const likes = await feedLikedService.findByFeedId(feedId);
+        const likes = await feedLikedService.findByFeedId(feedId as string);
         
         return sendSuccessResponse(res, responseMessages.feedLiked.retrieved, { content: likes, count: likes.length });
     } catch (error) {
@@ -112,12 +112,12 @@ export const checkIfFeedLiked = async (req: Request, res: Response, next: NextFu
         const { feedId } = req.params;
 
         // Check if feed exists
-        const feed = await feedService.getFeedById(feedId, null, false);
+        const feed = await feedService.getFeedById(feedId as string, null, false);
         if (!feed) {
             return sendNotFoundResponse(res, responseMessages.feed.notFound);
         }
 
-        const isLiked = await feedLikedService.checkIfLiked(feedId, authenticatedUser.id);
+        const isLiked = await feedLikedService.checkIfLiked(feedId as string, authenticatedUser.id);
         
         return sendSuccessResponse(res, responseMessages.feedLiked.retrieved, { content: isLiked });
     } catch (error) {

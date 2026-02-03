@@ -62,7 +62,7 @@ export const getCurrentUserSubscriptionById = async (
             return sendServerErrorResponse(res, responseMessages.subscription.subscriptionIdRequired, null);
         }
 
-        const subscription = await subscriptionService.getSubscriptionByIdForUser(id, user.id);
+        const subscription = await subscriptionService.getSubscriptionByIdForUser(id as string, user.id);
 
         if (!subscription) {
             return sendServerErrorResponse(res, responseMessages.subscription.subscriptionNotFound, null);
@@ -168,7 +168,7 @@ export const cancelSubscription = async (
         }
 
         // Find subscription by database ID
-        const dbSubscription = await subscriptionService.getSubscriptionById(subscriptionId);
+        const dbSubscription = await subscriptionService.getSubscriptionById(subscriptionId as string);
 
         if (!dbSubscription) {
             return sendNotFoundResponse(res, responseMessages.stripe.subscriptionNotFound);

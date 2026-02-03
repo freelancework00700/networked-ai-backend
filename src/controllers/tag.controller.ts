@@ -28,7 +28,7 @@ export const getAllTags = async (req: Request, res: Response, next: NextFunction
 export const getTagById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.auth?.user?.id;
-        const tag = await tagService.getTagById(req.params.id, userId);
+        const tag = await tagService.getTagById(req.params.id as string, userId);
         if (!tag) return sendNotFoundResponse(res, responseMessages.tag.notFoundSingle);
         return sendSuccessResponse(res, responseMessages.tag.retrievedSingle, tag);
     } catch (error) {
@@ -57,14 +57,14 @@ export const updateTag = async (req: Request, res: Response, next: NextFunction)
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const tag = await tagService.getTagById(req.params.id, userId, transaction);
+        const tag = await tagService.getTagById(req.params.id as string, userId, transaction);
         if (!tag) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.tag.notFoundSingle);
         }
-        await tagService.updateTag(req.params.id, req.body, userId, transaction);
+        await tagService.updateTag(req.params.id as string, req.body, userId, transaction);
         await transaction.commit();
-        const updated = await tagService.getTagById(req.params.id, userId);
+        const updated = await tagService.getTagById(req.params.id as string, userId);
         return sendSuccessResponse(res, responseMessages.tag.updated, updated);
     } catch (error) {
         await transaction.rollback();
@@ -78,12 +78,12 @@ export const deleteTag = async (req: Request, res: Response, next: NextFunction)
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const tag = await tagService.getTagById(req.params.id, userId, transaction);
+        const tag = await tagService.getTagById(req.params.id as string, userId, transaction);
         if (!tag) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.tag.notFoundSingle);
         }
-        await tagService.deleteTag(req.params.id, userId, transaction);
+        await tagService.deleteTag(req.params.id as string, userId, transaction);
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.tag.deleted, { id: req.params.id });
     } catch (error) {
@@ -100,7 +100,7 @@ export const getTagCustomers = async (req: Request, res: Response, next: NextFun
         const userId = res.locals.auth?.user?.id;
         const { page, limit, search, order_by, order_direction } = req.query;
 
-        const result = await tagService.getTagCustomersPaginated(id, userId, {
+        const result = await tagService.getTagCustomersPaginated(id as string, userId, {
             page: Number(page) || 1,
             limit: Number(limit) || 10,
             search: (search as string) || '',

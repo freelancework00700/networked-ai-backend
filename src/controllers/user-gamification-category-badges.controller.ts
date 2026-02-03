@@ -39,7 +39,7 @@ export const getUserBadgeStatus = async (req: Request, res: Response, next: Next
     try {
         const userId = req.params.userId;
 
-        const badgeStatus = await userGamificationCategoryBadgesService.getUserBadgeStatus(userId);
+        const badgeStatus = await userGamificationCategoryBadgesService.getUserBadgeStatus(userId as string);
 
         if (!badgeStatus) {
             return sendNotFoundResponse(res, 'User badge status not found');

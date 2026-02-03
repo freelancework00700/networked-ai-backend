@@ -52,7 +52,7 @@ export const getInterestById = async (req: Request, res: Response, next: NextFun
     try {
         const { id } = req.params;
 
-        const interest = await interestService.getInterestById(id);
+        const interest = await interestService.getInterestById(id as string);
         if (!interest) {
             return sendNotFoundResponse(res, responseMessages.interest.notFoundSingle);
         }
@@ -100,19 +100,19 @@ export const updateInterest = async (req: Request, res: Response, next: NextFunc
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const interest = await interestService.getInterestById(id, transaction);
+        const interest = await interestService.getInterestById(id as string, transaction);
         if (!interest) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.interest.notFoundSingle);
         }
 
-        const existingInterest = await interestService.getInterestByName(req.body.name, id);
+        const existingInterest = await interestService.getInterestByName(req.body.name, id as string);
         if (existingInterest) {
             await transaction.rollback();
             return sendConflictErrorResponse(res, responseMessages.interest.alreadyExists);
         }
 
-        await interestService.updateInterest(id, req.body, user.id, transaction);
+        await interestService.updateInterest(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.interest.updated);
@@ -131,13 +131,13 @@ export const deleteInterest = async (req: Request, res: Response, next: NextFunc
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const interest = await interestService.getInterestById(id, transaction);
+        const interest = await interestService.getInterestById(id as string, transaction);
         if (!interest) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.interest.notFoundSingle);
         }
 
-        await interestService.deleteInterest(id, user.id, transaction);
+        await interestService.deleteInterest(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.interest.deleted);

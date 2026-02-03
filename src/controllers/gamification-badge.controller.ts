@@ -52,7 +52,7 @@ export const getGamificationBadgeById = async (req: Request, res: Response, next
     try {
         const { id } = req.params;
 
-        const badge = await gamificationBadgeService.getGamificationBadgeById(id);
+        const badge = await gamificationBadgeService.getGamificationBadgeById(id as string);
         if (!badge) {
             return sendNotFoundResponse(res, responseMessages.gamificationBadge.notFoundSingle);
         }
@@ -100,21 +100,21 @@ export const updateGamificationBadge = async (req: Request, res: Response, next:
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const badge = await gamificationBadgeService.getGamificationBadgeById(id, transaction);
+        const badge = await gamificationBadgeService.getGamificationBadgeById(id as string, transaction);
         if (!badge) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.gamificationBadge.notFoundSingle);
         }
 
         if (req.body.event_count !== undefined) {
-            const existingBadge = await gamificationBadgeService.getGamificationBadgeByEventCount(req.body.event_count, id);
+            const existingBadge = await gamificationBadgeService.getGamificationBadgeByEventCount(req.body.event_count, id as string);
             if (existingBadge) {
                 await transaction.rollback();
                 return sendConflictErrorResponse(res, responseMessages.gamificationBadge.alreadyExists);
             }
         }
 
-        await gamificationBadgeService.updateGamificationBadge(id, req.body, user.id, transaction);
+        await gamificationBadgeService.updateGamificationBadge(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.gamificationBadge.updated);
@@ -133,13 +133,13 @@ export const deleteGamificationBadge = async (req: Request, res: Response, next:
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const badge = await gamificationBadgeService.getGamificationBadgeById(id, transaction);
+        const badge = await gamificationBadgeService.getGamificationBadgeById(id as string, transaction);
         if (!badge) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.gamificationBadge.notFoundSingle);
         }
 
-        await gamificationBadgeService.deleteGamificationBadge(id, user.id, transaction);
+        await gamificationBadgeService.deleteGamificationBadge(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.gamificationBadge.deleted);

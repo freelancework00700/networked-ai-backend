@@ -52,7 +52,7 @@ export const getGamificationDiamondById = async (req: Request, res: Response, ne
     try {
         const { id } = req.params;
 
-        const diamond = await gamificationDiamondService.getGamificationDiamondById(id);
+        const diamond = await gamificationDiamondService.getGamificationDiamondById(id as string);
         if (!diamond) {
             return sendNotFoundResponse(res, responseMessages.gamificationDiamond.notFoundSingle);
         }
@@ -100,21 +100,21 @@ export const updateGamificationDiamond = async (req: Request, res: Response, nex
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const diamond = await gamificationDiamondService.getGamificationDiamondById(id, transaction);
+        const diamond = await gamificationDiamondService.getGamificationDiamondById(id as string, transaction);
         if (!diamond) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.gamificationDiamond.notFoundSingle);
         }
 
         if (req.body.color) {
-            const existingDiamond = await gamificationDiamondService.getGamificationDiamondByColor(req.body.color, id);
+            const existingDiamond = await gamificationDiamondService.getGamificationDiamondByColor(req.body.color, id as string);
             if (existingDiamond) {
                 await transaction.rollback();
                 return sendConflictErrorResponse(res, responseMessages.gamificationDiamond.alreadyExists);
             }
         }
 
-        await gamificationDiamondService.updateGamificationDiamond(id, req.body, user.id, transaction);
+        await gamificationDiamondService.updateGamificationDiamond(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.gamificationDiamond.updated);
@@ -133,13 +133,13 @@ export const deleteGamificationDiamond = async (req: Request, res: Response, nex
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const diamond = await gamificationDiamondService.getGamificationDiamondById(id, transaction);
+        const diamond = await gamificationDiamondService.getGamificationDiamondById(id as string, transaction);
         if (!diamond) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.gamificationDiamond.notFoundSingle);
         }
 
-        await gamificationDiamondService.deleteGamificationDiamond(id, user.id, transaction);
+        await gamificationDiamondService.deleteGamificationDiamond(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.gamificationDiamond.deleted);

@@ -44,7 +44,7 @@ export const updateCommentReport = async (req: Request, res: Response, next: Nex
         const { id } = req.params;
         const { reason_id, reason } = req.body;
 
-        const existing = await commentReportService.findById(id);
+        const existing = await commentReportService.findById(id as string);
         if (!existing) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.commentReported.notFound);
@@ -56,7 +56,7 @@ export const updateCommentReport = async (req: Request, res: Response, next: Nex
             return sendUnauthorizedResponse(res, responseMessages.commentReported.forbidden);
         }
 
-        const updated = await commentReportService.updateReport(id, {
+        const updated = await commentReportService.updateReport(id as string, {
             reason_id: reason_id || null,
             reason: reason || null,
             updated_by: authenticatedUser.id,
@@ -83,7 +83,7 @@ export const deleteCommentReport = async (req: Request, res: Response, next: Nex
         const authenticatedUser = res.locals.auth?.user;
         const { id } = req.params;
 
-        const existing = await commentReportService.findById(id);
+        const existing = await commentReportService.findById(id as string);
         if (!existing) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.commentReported.notFound);
@@ -95,7 +95,7 @@ export const deleteCommentReport = async (req: Request, res: Response, next: Nex
             return sendUnauthorizedResponse(res, responseMessages.commentReported.forbidden);
         }
 
-        const deleted = await commentReportService.deleteReport(id, authenticatedUser.id, transaction);
+        const deleted = await commentReportService.deleteReport(id as string, authenticatedUser.id, transaction);
         if (!deleted) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.commentReported.notFound);
@@ -114,7 +114,7 @@ export const deleteCommentReport = async (req: Request, res: Response, next: Nex
 export const getCommentReportById = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { id } = req.params;
-        const report = await commentReportService.findById(id);
+        const report = await commentReportService.findById(id as string);
 
         if (!report) {
             return sendNotFoundResponse(res, responseMessages.commentReported.notFound);
@@ -144,7 +144,7 @@ export const getReportsByComment = async (req: Request, res: Response, next: Nex
     try {
         const { commentId } = req.params;
 
-        const reports = await commentReportService.findByCommentId(commentId);
+        const reports = await commentReportService.findByCommentId(commentId as string);
         return sendSuccessResponse(res, responseMessages.commentReported.retrieved, { content: reports, count: reports.length });
     } catch (error) {
         loggerService.error(`Error getting comment reports by comment: ${error}`);

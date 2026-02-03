@@ -59,7 +59,7 @@ export const getFeedById = async (req: Request, res: Response, next: NextFunctio
         const isAuthenticated = !!authUserId;
         const feedId = req.params.id;
 
-        const feed = await feedService.getFeedById(feedId, authUserId, true, true);
+        const feed = await feedService.getFeedById(feedId as string, authUserId, true, true);
         if (!feed) {
             return sendNotFoundResponse(res, responseMessages.feed.notFoundSingle);
         }
@@ -135,7 +135,7 @@ export const updateFeed = async (req: Request, res: Response, next: NextFunction
         const authenticatedUser = res.locals.auth?.user;
 
         // Check if feed exists
-        const existingFeed = await feedService.getFeedById(feedId, authenticatedUser.id, false);
+        const existingFeed = await feedService.getFeedById(feedId as string, authenticatedUser.id, false);
         if (!existingFeed) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feed.notFoundSingle);
@@ -151,12 +151,12 @@ export const updateFeed = async (req: Request, res: Response, next: NextFunction
             ...req.body,
         };
 
-        await feedService.updateFeed(feedId, updateData, authenticatedUser.id, transaction);
+        await feedService.updateFeed(feedId as string, updateData, authenticatedUser.id, transaction);
 
         await transaction.commit();
-        const updatedFeed = await feedService.getFeedById(feedId, authenticatedUser.id, true, true);
+        const updatedFeed = await feedService.getFeedById(feedId as string, authenticatedUser.id, true, true);
 
-        await emitFeedUpdated(feedId, feedService, FeedLiked);
+        await emitFeedUpdated(feedId as string, feedService, FeedLiked);
 
         return sendSuccessResponse(res, responseMessages.feed.updated, updatedFeed);
     } catch (error) {
@@ -174,7 +174,7 @@ export const deleteFeed = async (req: Request, res: Response, next: NextFunction
         const authenticatedUser = res.locals.auth?.user;
 
         // Check if feed exists
-        const existingFeed = await feedService.getFeedById(feedId, authenticatedUser.id, false);
+        const existingFeed = await feedService.getFeedById(feedId as string, authenticatedUser.id, false);
         if (!existingFeed) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.feed.notFoundSingle);
@@ -196,7 +196,7 @@ export const deleteFeed = async (req: Request, res: Response, next: NextFunction
         await transaction.commit();
 
         // Emit real-time feed deleted event
-        emitFeedDeleted({ feed_id: feedId, deleted_by: authenticatedUser.id });
+        emitFeedDeleted({ feed_id: feedId as string, deleted_by: authenticatedUser.id });
 
         return sendSuccessResponse(res, responseMessages.feed.deleted, true);
     } catch (error) {

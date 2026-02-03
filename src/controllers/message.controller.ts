@@ -21,7 +21,7 @@ export const getMessage = async (req: Request, res: Response, next: NextFunction
     try {
         const { message_id } = req.params;
 
-        const message = await messageService.findMessageById(message_id, transaction);
+        const message = await messageService.findMessageById(message_id as string, transaction);
         if (!message) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.message.notFound);
@@ -44,17 +44,17 @@ export const getAllMessages = async (req: Request, res: Response, next: NextFunc
         const { room_id } = req.params;
         const { page, limit } = req.query;
 
-        const room = await chatRoomService.findRoomByIdActive(room_id);
+        const room = await chatRoomService.findRoomByIdActive(room_id as string);
         if (!room) {
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
 
-        const userInRoom = await chatRoomService.checkUserInRoom(room_id, authenticatedUserId);
+        const userInRoom = await chatRoomService.checkUserInRoom(room_id as string, authenticatedUserId);
         if (!userInRoom) {
             return sendBadRequestResponse(res, responseMessages.message.userNotInRoom);
         }
 
-        const messages = await messageService.findAllMessagesByRoomIdWithPagination(room_id, authenticatedUserId, Number(page) || 1, Number(limit) || 20);
+        const messages = await messageService.findAllMessagesByRoomIdWithPagination(room_id as string, authenticatedUserId, Number(page) || 1, Number(limit) || 20);
         if (!messages || messages.data.length === 0) {
             return sendSuccessResponse(res, responseMessages.message.notFoundAll, []);
         }
@@ -154,17 +154,17 @@ export const deleteMessage = async (req: Request, res: Response, next: NextFunct
     try {
         const { message_id } = req.params;
 
-        const message = await messageService.findMessageById(message_id, transaction);
+        const message = await messageService.findMessageById(message_id as string, transaction);
         if (!message) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.message.notFound);
         }
 
-        await messageService.softDeleteMessage(message_id, transaction);
+        await messageService.softDeleteMessage(message_id as string, transaction);
         await transaction.commit();
 
         // Emit socket event
-        emitMessageDeleted(message.chat_room_id, message_id);
+        emitMessageDeleted(message.chat_room_id, message_id as string);
 
         return sendSuccessResponse(res, responseMessages.message.deleted, {
             message_id
@@ -183,7 +183,7 @@ export const markMessageRead = async (req: Request, res: Response, next: NextFun
         const authenticatedUserId = res.locals.auth?.user?.id;
         const { room_id } = req.params;
 
-        const room = await chatRoomService.findRoomByIdActive(room_id);
+        const room = await chatRoomService.findRoomByIdActive(room_id as string);
         if (!room) {
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
@@ -193,8 +193,8 @@ export const markMessageRead = async (req: Request, res: Response, next: NextFun
         }
 
         const timeFormatted = moment.utc().format('M/D/YYYY h:mm:ss A');
-        const updatedCount = await messageService.markMessagesAsRead(room_id, authenticatedUserId, timeFormatted);
-        await emitRoomUpdatedToUser(authenticatedUserId, room_id);
+        const updatedCount = await messageService.markMessagesAsRead(room_id as string, authenticatedUserId, timeFormatted);
+        await emitRoomUpdatedToUser(authenticatedUserId, room_id as string);
 
         return sendSuccessResponse(res, responseMessages.message.markedAsRead, { updatedCount });
     } catch (error) {
@@ -488,7 +488,7 @@ export const reactionToMessage = async (req: Request, res: Response, next: NextF
         const { message_id } = req.params;
         const { reaction_type } = req.body;
 
-        const message = await messageService.findMessageById(message_id, transaction);
+        const message = await messageService.findMessageById(message_id as string, transaction);
         if (!message) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.message.notFound);
@@ -503,7 +503,7 @@ export const reactionToMessage = async (req: Request, res: Response, next: NextF
         await transaction.commit();
 
         // Emit socket event
-        emitMessageReaction(message.chat_room_id, message_id, authenticatedUserId, reaction_type);
+        emitMessageReaction(message.chat_room_id as string, message_id as string, authenticatedUserId, reaction_type);
 
         return sendSuccessResponse(res, responseMessages.message.reactionAdded);
     } catch (error) {
@@ -522,14 +522,14 @@ export const deleteHistory = async (req: Request, res: Response, next: NextFunct
         const { room_id } = req.params;
 
         // Find room
-        const chatRoom = await chatRoomService.findRoomByIdActive(room_id, transaction);
+        const chatRoom = await chatRoomService.findRoomByIdActive(room_id as string, transaction);
         if (!chatRoom) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.chatRoom.notFound);
         }
 
         // Check if user is in room and not deleted
-        const userInRoom = await chatRoomService.checkUserInRoom(room_id, authenticatedUserId, transaction);
+        const userInRoom = await chatRoomService.checkUserInRoom(room_id as string, authenticatedUserId, transaction);
         if (!userInRoom) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.message.userNotInRoom);
@@ -547,7 +547,7 @@ export const deleteHistory = async (req: Request, res: Response, next: NextFunct
             : [authenticatedUserId];
 
         await chatRoomService.updateChatRoom(
-            room_id,
+            room_id as string,
             {
                 delete_history_by: updatedDeleteHistoryBy,
                 updated_by: authenticatedUserId || null
@@ -556,7 +556,7 @@ export const deleteHistory = async (req: Request, res: Response, next: NextFunct
         );
 
         // Get all messages in the room
-        const messages = await messageService.getMessagesByRoomId(room_id);
+        const messages = await messageService.getMessagesByRoomId(room_id as string);
 
         // Update each message's deleted_by array to include user_id
         const updatePromises = messages.map((message) => {

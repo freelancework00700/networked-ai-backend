@@ -78,7 +78,7 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
         const authUserId = res.locals.auth?.user?.id ?? null;
 
         // Check if event exists
-        const existingEvent = await eventService.getEventByIdOrSlug(id, false);
+        const existingEvent = await eventService.getEventByIdOrSlug(id as string, false);
         if (!existingEvent) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
@@ -88,7 +88,7 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
             ...req.body,
         };
 
-        const event = await eventService.updateEvent(id, params, authUserId, transaction);
+        const event = await eventService.updateEvent(id as string, params, authUserId, transaction);
         if (!event) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.event.failedToUpdate);
@@ -117,14 +117,14 @@ export const deleteEvent = async (req: Request, res: Response, next: NextFunctio
         }
 
         // Check if event exists
-        const existingEvent = await eventService.getEventByIdOrSlug(id, false);
+        const existingEvent = await eventService.getEventByIdOrSlug(id as string, false);
         if (!existingEvent) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
 
         // Delete the event
-        const deleted = await eventService.deleteEvent(id, authUserId, transaction);
+        const deleted = await eventService.deleteEvent(id as string, authUserId, transaction);
         if (!deleted) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.event.failedToDelete);
@@ -153,7 +153,7 @@ export const upsertEventParticipantRole = async (req: Request, res: Response, ne
         }
 
         // Ensure event exists
-        const existingEvent = await eventService.getEventByIdOrSlug(eventId, false);
+        const existingEvent = await eventService.getEventByIdOrSlug(eventId as string, false);
         if (!existingEvent) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
@@ -161,7 +161,7 @@ export const upsertEventParticipantRole = async (req: Request, res: Response, ne
 
         const { user_id, role } = req.body as { user_id: string; role: EventParticipantRole | 'None' };
 
-        const participant = await eventService.upsertEventParticipantRole(eventId, user_id, role, authUserId, transaction);
+        const participant = await eventService.upsertEventParticipantRole(eventId as string, user_id, role, authUserId, transaction);
         if (!participant && role !== 'None') {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.event.failedToUpdate);
@@ -185,7 +185,7 @@ export const getEventByIdOrSlug = async (req: Request, res: Response, next: Next
         const authUserId = res.locals.auth?.user?.id ?? null;
         const isAuthenticated = !!authUserId;
 
-        const event = await eventService.getEventByIdOrSlug(value, includeDetails);
+        const event = await eventService.getEventByIdOrSlug(value as string, includeDetails);
         if (!event) {
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
@@ -293,7 +293,7 @@ export const getEventAnalytics = async (req: Request, res: Response, next: NextF
     try {
         const { id } = req.params;
 
-        const analytics = await eventService.getEventAnalytics(id);
+        const analytics = await eventService.getEventAnalytics(id as string);
         if (!analytics) {
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
@@ -315,7 +315,7 @@ export const getTicketAnalytics = async (req: Request, res: Response, next: Next
         const search = (req.query.search as string) || '';
         const authUserId = res.locals.auth?.user?.id ?? null;
 
-        const analytics = await eventService.getTicketAnalytics(ticketId, page, limit, search);
+        const analytics = await eventService.getTicketAnalytics(ticketId as string, page, limit, search);
         if (!analytics) {
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
@@ -352,13 +352,13 @@ export const downloadTicketAnalyticsCSV = async (req: Request, res: Response, ne
     try {
         const { ticketId } = req.params;
 
-        const csvData = await eventService.generateTicketAnalyticsCSV(ticketId);
+        const csvData = await eventService.generateTicketAnalyticsCSV(ticketId as string);
         if (!csvData) {
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
 
         // Get ticket name for filename
-        const analytics = await eventService.getTicketAnalyticsForCSV(ticketId);
+        const analytics = await eventService.getTicketAnalyticsForCSV(ticketId as string);
         const ticketName = analytics?.ticket?.name || 'ticket';
         const sanitizedTicketName = ticketName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
         const filename = `${sanitizedTicketName}_${new Date().toISOString().split('T')[0]}.csv`;
@@ -600,7 +600,7 @@ export const createEventView = async (req: Request, res: Response, next: NextFun
         }
 
         const eventView = await eventService.createEventView(
-            id,
+            id as string,
             authUserId || null,
             deviceId,
             authUserId || null
@@ -621,11 +621,11 @@ export const toggleEventLike = async (req: Request, res: Response, next: NextFun
         const authUserId = res.locals.auth?.user?.id ?? null;
 
         // Check if event is already liked
-        const existingLike = await eventService.findEventLikeByEventIdAndUserId(id, authUserId);
+        const existingLike = await eventService.findEventLikeByEventIdAndUserId(id as string, authUserId);
 
         if (existingLike) {
             // Unlike the event
-            const result = await eventService.unlikeEvent(id, authUserId, authUserId);
+            const result = await eventService.unlikeEvent(id as string, authUserId, authUserId);
             if (!result) {
                 return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
             }
@@ -634,7 +634,7 @@ export const toggleEventLike = async (req: Request, res: Response, next: NextFun
             });
         } else {
             // Like the event
-            const eventLike = await eventService.createEventLike(id, authUserId, authUserId);
+            const eventLike = await eventService.createEventLike(id as string, authUserId, authUserId);
             return sendSuccessResponse(res, responseMessages.event.liked, {
                 content: { ...eventLike.toJSON(), is_liked: true }
             });
@@ -655,7 +655,7 @@ export const reportEvent = async (req: Request, res: Response, next: NextFunctio
         const { report_reason_id, reason } = req.body;
 
         const eventReport = await eventService.reportEvent(
-            id,
+            id as string,
             authUserId,
             report_reason_id,
             reason || null,
@@ -684,7 +684,7 @@ export const saveEventFeedback = async (req: Request, res: Response, next: NextF
         }
 
         const feedback = await eventService.saveEventFeedback(
-            id,
+            id as string,
             authUserId,
             feedbackData,
             authUserId,
@@ -759,7 +759,7 @@ export const getEventQuestionsWithAttendees = async (req: Request, res: Response
         const limitNum = parseInt(limit as string) || 10;
 
         const result = await eventService.getEventQuestionsWithAttendees(
-            event_id,
+            event_id as string,
             event_phase as string,
             pageNum,
             limitNum,

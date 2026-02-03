@@ -46,7 +46,7 @@ export const getReportReasonById = async (req: Request, res: Response, next: Nex
     try {
         const { id } = req.params;
 
-        const reportReason = await reportReasonService.getReportReasonById(id);
+        const reportReason = await reportReasonService.getReportReasonById(id as string);
         if (!reportReason) {
             return sendNotFoundResponse(res, responseMessages.reportReason.notFoundSingle);
         }
@@ -94,21 +94,21 @@ export const updateReportReason = async (req: Request, res: Response, next: Next
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const reportReason = await reportReasonService.getReportReasonById(id);
+        const reportReason = await reportReasonService.getReportReasonById(id as string);
         if (!reportReason) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.reportReason.notFoundSingle);
         }
 
         if (req.body.reason) {
-            const existingReportReason = await reportReasonService.getReportReasonByReason(req.body.reason, id);
+            const existingReportReason = await reportReasonService.getReportReasonByReason(req.body.reason, id as string);
             if (existingReportReason) {
                 await transaction.rollback();
                 return sendConflictErrorResponse(res, responseMessages.reportReason.alreadyExists);
             }
         }
 
-        await reportReasonService.updateReportReason(id, req.body, user.id, transaction);
+        await reportReasonService.updateReportReason(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.reportReason.updated);
@@ -127,13 +127,13 @@ export const deleteReportReason = async (req: Request, res: Response, next: Next
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const reportReason = await reportReasonService.getReportReasonById(id);
+        const reportReason = await reportReasonService.getReportReasonById(id as string);
         if (!reportReason) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.reportReason.notFoundSingle);
         }
 
-        await reportReasonService.deleteReportReason(id, user.id, transaction);
+        await reportReasonService.deleteReportReason(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.reportReason.deleted);

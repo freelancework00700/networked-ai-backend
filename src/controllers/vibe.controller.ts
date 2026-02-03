@@ -46,7 +46,7 @@ export const getVibeById = async (req: Request, res: Response, next: NextFunctio
     try {
         const { id } = req.params;
 
-        const vibe = await vibeService.getVibeById(id);
+        const vibe = await vibeService.getVibeById(id as string);
         if (!vibe) {
             return sendNotFoundResponse(res, responseMessages.vibe.notFoundSingle);
         }
@@ -94,19 +94,19 @@ export const updateVibe = async (req: Request, res: Response, next: NextFunction
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const vibe = await vibeService.getVibeById(id);
+        const vibe = await vibeService.getVibeById(id as string);
         if (!vibe) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.vibe.notFoundSingle);
         }
 
-        const existingVibe = await vibeService.getVibeByName(req.body.name, id);
+        const existingVibe = await vibeService.getVibeByName(req.body.name, id as string);
         if (existingVibe) {
             await transaction.rollback();
             return sendConflictErrorResponse(res, responseMessages.vibe.alreadyExists);
         }
 
-        await vibeService.updateVibe(id, req.body, user.id, transaction);
+        await vibeService.updateVibe(id as string, req.body, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.vibe.updated);
@@ -125,13 +125,13 @@ export const deleteVibe = async (req: Request, res: Response, next: NextFunction
         const { id } = req.params;
         const { user } = res.locals.auth;
 
-        const vibe = await vibeService.getVibeById(id);
+        const vibe = await vibeService.getVibeById(id as string);
         if (!vibe) {
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.vibe.notFoundSingle);
         }
 
-        await vibeService.deleteVibe(id, user.id, transaction);
+        await vibeService.deleteVibe(id as string, user.id, transaction);
 
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.vibe.deleted);
