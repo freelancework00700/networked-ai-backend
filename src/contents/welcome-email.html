@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Welcome to Networked AI</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #1c1c1e;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #1c1c1e;
+            color: #d4b165;
+            text-align: center;
+            padding: 20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #ffffff;
+        }
+        .content h2 {
+            color: #1c1c1e;
+        }
+        .button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #d4b165;
+            color: #1c1c1e;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+            border: 2px solid #1c1c1e;
+        }
+        .button:hover {
+            background-color: #b38a32;
+        }
+        .footer {
+            background-color: #888891;
+            color: #f9f9f9;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+        }
+        .footer a {
+            color: #d4b165;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            color: #c2ac45;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Welcome to Networked AI</h1>
+        </div>
+
+        <div class="content">
+            <h2>Hello {{userFullName}},</h2>
+            <p>Thank you for signing up for <strong>Networked AI</strong>. We're excited to have you onboard!</p>
+            
+            <p><strong>Discover the future of networking with Networked AI</strong> - Your central hub for local connections and extraordinary events. Wherever you are, transform any city into a vibrant networking arena, unlocking a universe of opportunities tailored just for you.</p>
+
+            <p><strong>Host with Elegance:</strong> Elevate your hosting experience. Create unforgettable events, send personalized invites, and curate unique experiences that resonate with shared passions and interests.</p>
+
+            <p><strong>AI Suggested Invitations:</strong> Sending and receiving invites has never been more sophisticated. Explore events, receive warm invitations, and step into gatherings filled with potential connections and meaningful interactions.</p>
+
+            <p><strong>Network with Precision:</strong> Forget the guesswork and let our app intuitively guide you through a maze of incredible people and events. Experience networking that feels authentic, effortless, and finely tuned to your preferences and aspirations.</p>
+
+            <p><strong>Global Reach, Local Vibe:</strong> Whether you're home or exploring a new city, Networked AI becomes your local guide, unveiling a world of events and networks that align with your essence and curiosity.</p>
+
+            <p><strong>Join the Revolution:</strong> Dive into the Networked AI experience. Empower your social journey with technology that breathes life into every event, every connection, and every moment shared.</p>
+
+            <p><strong>Networked AI:</strong> Crafting the art of authentic relationships in every corner of the world. Transform your social landscape. Host, invite, and connect with unprecedented elegance and intelligence. Join us and redefine what's possible in the world of networking!</p>
+
+            <a href="{{website}}" class="button">Get Started</a>
+
+        </div>
+
+        <div class="footer">
+            <p>Follow us on <a href="https://www.instagram.com/networked_ai">Instagram</a> for updates.</p>
+            <p>© {{year}} Networked AI. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

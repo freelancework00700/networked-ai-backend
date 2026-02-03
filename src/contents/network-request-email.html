@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>New Network Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .email-container {
+            background-color: #ffffff;
+            margin: 0 auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+        }
+        .header {
+            background-color: #1c1c1e;
+            padding: 20px;
+            color: #d4b165;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            padding: 30px 20px;
+            font-size: 16px;
+            color: #333;
+            line-height: 1.6;
+        }
+        .event-footer {
+            background-color: #888891;
+            color: #f9f9f9;
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+        }
+        .button {
+            display: block;
+            width: calc(100% - 30px);
+            background-color: #F5BC61;
+            color: #1c1c1e !important;
+            padding: 10px;
+            text-decoration: none;
+            border-radius: 10px;
+            margin: 10px auto;
+            text-align: center;
+        }
+        .button:hover {
+            background-color: #b38a32;
+        }
+        .event-footer a {
+            color: #d2bc55;
+            text-decoration: none;
+        }
+        .event-footer a:hover {
+            color: #c2ac45;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>New Network Request</h1>
+        </div>
+
+        <div class="content">
+            <div style="text-align:center; padding: 40px 0;">
+                <!-- Envelope Icon -->
+                <img src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fnetworked.png?alt=media&token=f5cba863-5c90-4a4f-bd9d-132c42f21841" alt="Envelope" style="width:60px; margin-bottom:24px;" />
+
+                <!-- Main Message -->
+                <div style="font-size:22px; font-weight:bold; margin-bottom:16px; color:#1c1c1e;">
+                    You have a new network request!
+                </div>
+                <div style="font-size:16px; color:#333; margin-bottom:32px;">
+                    <strong>{{senderName}}</strong> wants to connect with you on Networked AI.
+                </div>
+
+                <!-- Accept Button -->
+                <a href="https://app.net-worked.ai/{{senderUsername}}" class="button">Accept Request</a>
+            </div>
+        </div>
+
+        <div class="event-footer">
+            <div>
+                <p>For more information, visit our <a href="https://app.net-worked.ai/{{senderUsername}}">profile page</a>.</p>  
+            </div>
+
+            <div>
+                <a href="https://apps.apple.com/us/app/networked-ai/id6471849642">
+                    <img
+                    src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fapp-store-banner.png?alt=media&token=2d6bf6f7-25c5-467f-8d5f-b464ef7116b2"
+                    alt="App Store"
+                    width="135"
+                    height="40"
+                    />
+                </a>
+            </div>
+
+            <div style="padding-top: 10px">
+                <a href="https://www.instagram.com/networked_ai">
+                    <img
+                    src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Finstagram.png?alt=media&token=f7ed4cb4-4d0d-4c3e-8dc3-47d7b97c3cd0"
+                    alt="Instagram"
+                    style="opacity: 60%; height: 24px; width: 24px"
+                    />
+                </a>
+            </div>
+
+            <p>© {{year}} Networked, LLC. All Rights Reserved</p>
+        </div>
+    </div>
+</body>
+</html>

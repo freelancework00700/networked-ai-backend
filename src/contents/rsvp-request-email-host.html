@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSVP Request</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
+        .email-container { background-color: #ffffff; margin: 0 auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); max-width: 600px; }
+        .header { background-color: #1c1c1e; padding: 20px; color: #d4b165; text-align: center; border-radius: 10px 10px 0 0; }
+        .content { padding: 30px 20px; font-size: 16px; color: #333; line-height: 1.6; }
+        .event-footer { background-color: #888891; color: #f9f9f9; text-align: center; padding: 20px; font-size: 12px; }
+        .button { display: block; width: calc(100% - 30px); background-color: #F5BC61; color: #1c1c1e !important; padding: 10px; text-decoration: none; border-radius: 10px; margin: 10px auto; text-align: center; }
+        .button:hover { background-color: #b38a32; }
+        .event-footer a { color: #d2bc55; text-decoration: none; }
+        .event-footer a:hover { color: #c2ac45; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>New RSVP Request</h1>
+        </div>
+
+        <div class="content">
+            <h2>Hi {{hostName}},</h2>
+            <p><strong>{{requesterName}}</strong> has requested to RSVP for your event <strong>{{eventTitle}}</strong>.</p>
+            <a href="https://app.net-worked.ai/event/{{slug}}" class="button">Review RSVP</a>
+        </div>
+
+        <div class="event-footer">
+            <p>For more information, visit the <a href="https://app.net-worked.ai/event/{{slug}}">event page</a>.</p>
+            <p>© {{year}} Networked, LLC. All Rights Reserved</p>
+        </div>
+    </div>
+</body>
+</html>

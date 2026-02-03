@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Event Confirmation</title>
+<style>
+  .email-container {
+    max-width: 600px;
+    margin: auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9f9f9;
+    overflow: hidden;
+  }
+  .event-header {
+    background-color: #1c1c1e;
+    color: #d4b165;
+    padding: 20px;
+    text-align: center;
+  }
+  .event-image {
+    max-width: 100%;
+    display: block;
+    margin: auto;
+    border-bottom: 5px solid #d4b165;
+  }
+  .event-details {
+    text-align: left;
+    padding: 20px;
+    background-color: #f9f9f9;
+    color: #1c1c1e;
+  }
+  .event-footer {
+    background-color: #888891;
+    color: #f9f9f9;
+    text-align: center;
+    padding: 20px;
+    font-size: 12px;
+  }
+  .button {
+    display: block;
+    width: calc(100% - 30px);
+    background-color: #F5BC61;
+    color: #1c1c1e !important;
+    padding: 10px;
+    text-decoration: none;
+    border-radius: 10px;
+    margin: 10px auto;
+    text-align: center;
+  }
+  .button:hover {
+    background-color: #b38a32;
+  }
+  .qr-code-container {
+    text-align: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+  }
+  .footer-links a,
+  .footer-links a:visited {
+    color: #d2bc55;
+    text-decoration: none;
+    padding: 0 10px;
+  }
+  .footer-links a:hover {
+    color: #c2ac45;
+  }
+  .event-footer a {
+    color: #d2bc55;
+    text-decoration: none;
+  }
+  .event-footer a:hover {
+    color: #c2ac45;
+  }
+  .ticket-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }
+  .ticket-table td {
+    padding: 10px;
+  }
+  .ticket-qr {
+    width: 120px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .ticket-info {
+    padding-left: 15px;
+    vertical-align: middle;
+  }
+  .ticket-name {
+    margin: 0;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  .ticket-type {
+    margin: 0;
+    font-size: 14px;
+  }
+  .ticket-quantity {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+  }
+  .apple-wallet-button {
+    display: inline-block;
+    margin-top: 10px;
+    background-color: #F5BC61;
+    color: #1c1c1e !important;
+    padding: 8px 12px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  .ticket-divider {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 10px 0;
+  }
+</style>
+</head>
+<body>
+<div class="email-container">
+  <div class="event-header">
+    <h2>RSVP Confirmation for {{title}}</h2>
+  </div>
+  {{eventImage}}
+  <div class="event-details">
+    <p><strong>Date & Time:</strong> {{dateTime}}</p>
+    <p><strong>Location:</strong> <a href="{{mapsUrl}}">{{location}}</a></p>
+    <p><strong>Hosted by:</strong> {{hostName}}</p>
+    {{descriptionSection}}
+    <a href="{{googleCalendarUrl}}" class="button">Add to Google Calendar</a>
+    <a href="{{calendarFileUrl}}" class="button">Download ICS File</a>
+  </div>
+  <div class="qr-code-container">
+    {{ticketsSection}}
+    <p>Scan this QR code at the event for quick check-in.</p>
+  </div>
+    <div class="event-footer">
+        <div>
+            <p>For more information, visit our <a href="https://app.net-worked.ai/event/{{slug}}">event page</a>.</p>
+        </div>
+
+        <div>
+            <a href="https://apps.apple.com/us/app/networked-ai/id6471849642">
+                <img
+                src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fapp-store-banner.png?alt=media&token=2d6bf6f7-25c5-467f-8d5f-b464ef7116b2"
+                alt="App Store"
+                width="135"
+                height="40"
+                />
+            </a>
+        </div>
+
+        <div style="padding-top: 10px">
+            <a href="https://www.instagram.com/networked_ai">
+                <img
+                src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Finstagram.png?alt=media&token=f7ed4cb4-4d0d-4c3e-8dc3-47d7b97c3cd0"
+                alt="Instagram"
+                style="opacity: 60%; height: 24px; width: 24px"
+                />
+            </a>
+        </div>
+
+        <p>© {{year}} Networked, LLC. All Rights Reserved</p>
+    </div>
+</div>
+</body>
+</html>

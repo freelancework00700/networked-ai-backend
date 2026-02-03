@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Shared a post</title>
+  <style>
+    .email-container {
+      max-width: 600px;
+      margin: auto;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      overflow: hidden;
+    }
+
+    .event-header {
+      background-color: #1c1c1e;
+      color: #d4b165;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .event-image {
+      max-width: 100%;
+      display: block;
+      margin: auto;
+      border-bottom: 5px solid #d4b165;
+    }
+
+    .event-details {
+      text-align: left;
+      padding: 20px;
+      background-color: #f9f9f9;
+      color: #1c1c1e;
+    }
+
+    .event-footer {
+      background-color: #888891;
+      color: #f9f9f9;
+      text-align: center;
+      padding: 20px;
+      font-size: 12px;
+    }
+
+    .button {
+      display: block;
+      width: calc(100% - 30px);
+      background-color: #F5BC61;
+      color: #1c1c1e !important;
+      padding: 10px;
+      text-decoration: none;
+      border-radius: 10px;
+      margin: 10px auto;
+      text-align: center;
+    }
+
+    .button:hover {
+      background-color: #b38a32;
+    }
+
+    .post-content {
+      background-color: #ffffff;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .post-text {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #333;
+      margin-bottom: 20px;
+      white-space: pre-wrap;
+    }
+
+    .footer-links a,
+    .footer-links a:visited {
+      color: #d2bc55;
+      text-decoration: none;
+      padding: 0 10px;
+    }
+
+    .footer-links a:hover {
+      color: #c2ac45;
+    }
+
+    .event-footer a {
+      color: #d2bc55;
+      text-decoration: none;
+    }
+
+    .event-footer a:hover {
+      color: #c2ac45;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="email-container">
+    <div class="event-header">
+      <h1>Shared a post</h1>
+    </div>
+    <div class="post-content">
+      <p>Hi there!</p>
+      <p><strong>{{senderName}}</strong> shared you a post on Networked AI.</p>
+      <div class="post-text">
+        "{{postText}}"
+      </div>
+      <a href="{{postUrl}}" class="button">View Post</a>
+    </div>
+    <div class="event-footer">
+      <div>
+        <p>For more information, visit our <a href="https://app.net-worked.ai">app</a>.</p>
+      </div>
+
+      <div>
+        <a href="https://apps.apple.com/us/app/networked-ai/id6471849642">
+          <img
+            src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fapp-store-banner.png?alt=media&token=2d6bf6f7-25c5-467f-8d5f-b464ef7116b2"
+            alt="App Store" width="135" height="40" />
+        </a>
+      </div>
+
+      <div style="padding-top: 10px">
+        <a href="https://www.instagram.com/networked_ai">
+          <img
+            src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Finstagram.png?alt=media&token=f7ed4cb4-4d0d-4c3e-8dc3-47d7b97c3cd0"
+            alt="Instagram" style="opacity: 60%; height: 24px; width: 24px" />
+        </a>
+      </div>
+
+      <p>© {{year}} Networked, LLC. All Rights Reserved</p>
+    </div>
+  </div>
+</body>
+
+</html>

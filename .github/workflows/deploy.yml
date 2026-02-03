@@ -1,0 +1,39 @@
+name: CI/CD for NetworkedAI API
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Pull latest code
+        run: |
+          cd /home/di/networked-ai-production/NetworkedAI_API
+          git pull origin production
+
+      - name: Install dependencies
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          cd /home/di/networked-ai-production/NetworkedAI_API
+          npm install
+
+      - name: Build project
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          cd /home/di/networked-ai-production/NetworkedAI_API
+          npm run build
+
+      - name: Reload PM2 Service
+        run: |
+          export NVM_DIR="$HOME/.nvm"
+          [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+          nvm use 22
+          pm2 reload 'Networked_AI_Prod_API_20113'
+
