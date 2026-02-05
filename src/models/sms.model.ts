@@ -1,24 +1,21 @@
 import User from './user.model';
+import { SmsType } from '../types/enums';
 import { sendSms } from '../utils/twilio.service';
 import loggerService from '../utils/logger.service';
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
 export class Sms extends Model {
     public id!: string;
-    public user_id!: string | null;
     public to!: string[];
-    public type!: string;
+    public type!: SmsType;
     public message!: string;
     public from!: string;
-    public is_deleted!: boolean;
     
     public created_by!: string | null;
     public updated_by!: string | null;
-    public deleted_by!: string | null;
     
     public created_at!: Date;
     public updated_at!: Date;
-    public deleted_at!: Date | null;
 
     static initModel(connection: Sequelize): void {
         Sms.init(
@@ -28,17 +25,13 @@ export class Sms extends Model {
                     defaultValue: DataTypes.UUIDV4,
                     primaryKey: true,
                 },
-                user_id: {
-                    type: DataTypes.UUID,
-                    allowNull: true,
-                },
                 to: {
                     type: DataTypes.JSON,
                     allowNull: false,
                     defaultValue: [],
                 },
                 type: {
-                    type: DataTypes.STRING(100),
+                    type: DataTypes.ENUM(...Object.values(SmsType)),
                     allowNull: false,
                 },
                 message: {
@@ -49,25 +42,12 @@ export class Sms extends Model {
                     type: DataTypes.STRING(500),
                     allowNull: false,
                 },
-                is_deleted: {
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: false,
-                },
                 created_by: {
                     type: DataTypes.UUID,
                     allowNull: true,
                 },
                 updated_by: {
                     type: DataTypes.UUID,
-                    allowNull: true,
-                },
-                deleted_by: {
-                    type: DataTypes.UUID,
-                    allowNull: true,
-                },
-                deleted_at: {
-                    type: DataTypes.DATE,
                     allowNull: true,
                 },
             },
@@ -83,10 +63,8 @@ export class Sms extends Model {
     }
 
     static initAssociations(): void {
-        Sms.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
         Sms.belongsTo(User, { foreignKey: 'created_by', as: 'created_by_user' });
         Sms.belongsTo(User, { foreignKey: 'updated_by', as: 'updated_by_user' });
-        Sms.belongsTo(User, { foreignKey: 'deleted_by', as: 'deleted_by_user' });
     }
 
     static initHooks(): void {

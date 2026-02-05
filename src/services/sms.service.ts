@@ -1,16 +1,12 @@
-import { Transaction } from 'sequelize';
 import env from '../utils/validate-env';
+import { Op, Transaction } from 'sequelize';
+import customerService from './customer.service';
 import loggerService from '../utils/logger.service';
 import { SmsType, ReminderType } from '../types/enums';
 import { Event, Sms, User, EventParticipant, EventAttendee, Feed } from "../models";
+import { CreateSmsParams, GetAllSmsOptions, SendSmsByTagsAndSegmentsParams } from '../types/sms.interface';
 
-interface CreateSmsParams {
-    to: string[];
-    type: string;
-    message: string;
-    user_id?: string | null;
-    created_by?: string | null;
-}
+const smsAttributes = ['id', 'type', 'message', 'from', 'to', 'created_at', 'updated_at', 'created_by', 'updated_by'];
 
 /**
  * Create SMS record in database
@@ -20,12 +16,9 @@ interface CreateSmsParams {
  */
 const createSms = async (params: CreateSmsParams, transaction?: Transaction): Promise<Sms> => {
     try {
-        const userId = params.user_id ?? params.created_by ?? null;
-
         const smsRecord = await Sms.create(
             {
                 to: params.to,
-                user_id: userId,
                 type: params.type,
                 message: params.message,
                 from: env.TWILIO_PHONE_NUMBER,
@@ -541,9 +534,7 @@ export const sendNetworkBroadcastSms = async (
         const smsMessage = getInviteSmsText(event, sender || undefined);
 
         // Create SMS record directly
-        const userId = senderId || null;
         const smsRecord = await Sms.create({
-            user_id: userId,
             to: recipientPhones,
             message: smsMessage,
             created_by: senderId || null,
@@ -609,9 +600,7 @@ export const sendFeedNetworkBroadcastSms = async (feed: Feed, recipientUserIds: 
         const smsMessage = generateFeedMessage(feed, senderName);
 
         // Create SMS record directly
-        const userId = senderId || null;
         const smsRecord = await Sms.create({
-            user_id: userId,
             to: recipientPhones,
             message: smsMessage,
             created_by: senderId || null,
@@ -626,19 +615,121 @@ export const sendFeedNetworkBroadcastSms = async (feed: Feed, recipientUserIds: 
     }
 };
 
+/** Send SMS to customers from tag_ids and/or segment_ids; merges with payload to and creates one SMS record (hook sends). */
+export const sendSmsByTagsAndSegments = async (
+    params: SendSmsByTagsAndSegmentsParams,
+    userId: string,
+    transaction?: Transaction
+): Promise<Sms> => {
+    const payloadTo = Array.isArray(params.to) ? params.to : [];
+    const tagIds = Array.isArray(params.tag_ids) ? params.tag_ids : [];
+    const segmentIds = Array.isArray(params.segment_ids) ? params.segment_ids : [];
+
+    const customerMobiles = await customerService.getDistinctMobilesByTagsAndSegments(userId, tagIds, segmentIds, transaction);
+    const allTo = [...new Set([...customerMobiles, ...payloadTo])];
+
+    return createSms(
+        {
+            to: allTo,
+            type: params.type,
+            created_by: userId,
+            message: params.message,
+        },
+        transaction
+    );
+};
+
+export const getAllSmsPaginated = async (
+    userId: string,
+    options: GetAllSmsOptions = {}
+): Promise<{ data: any[]; pagination: { totalCount: number; currentPage: number; totalPages: number } }> => {
+    const {
+        date_to,
+        page = 1,
+        date_from,
+        limit = 10,
+        search = '',
+        order_by = 'created_at',
+        order_direction = 'DESC',
+    } = options;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const whereClause: any = { created_by: userId };
+    if (search) {
+        whereClause[Op.or] = [
+            { message: { [Op.like]: `%${search}%` } },
+            { from: { [Op.like]: `%${search}%` } },
+            { type: { [Op.like]: `%${search}%` } },
+        ];
+    }
+
+    if (date_from || date_to) {
+        const fromDate = date_from ? new Date(date_from) : null;
+        const toDate = date_to ? new Date(date_to) : null;
+        whereClause.created_at = {};
+        if (fromDate && !isNaN(fromDate.getTime())) whereClause.created_at[Op.gte] = fromDate;
+        if (toDate && !isNaN(toDate.getTime())) whereClause.created_at[Op.lte] = toDate;
+    }
+
+    const validOrderColumns = ['message', 'created_at'];
+    const safeOrder = validOrderColumns.includes(order_by) ? order_by : 'created_at';
+
+    const { count, rows } = await Sms.findAndCountAll({
+        offset,
+        where: whereClause,
+        limit: Number(limit),
+        attributes: smsAttributes,
+        order: [[safeOrder, order_direction]],
+    });
+
+    return {
+        data: rows.map((r: any) => (r.toJSON ? r.toJSON() : r)),
+        pagination: {
+            totalCount: count,
+            currentPage: Number(page),
+            totalPages: Math.ceil(count / Number(limit)) || 0,
+        },
+    };
+};
+
+export const getSmsById = async (id: string, userId: string, transaction?: Transaction): Promise<Sms | null> => {
+    return Sms.findOne({
+        transaction,
+        attributes: smsAttributes,
+        where: { id, created_by: userId },
+    });
+};
+
+export const deleteSms = async (id: string, userId: string, transaction?: Transaction): Promise<boolean> => {
+    const sms = await Sms.findOne({
+        transaction,
+        attributes: ['id'],
+        where: { id, created_by: userId },
+    });
+
+    if (!sms) return false;
+
+    await Sms.destroy({ where: { id }, transaction });
+    return true;
+};
+
 export default {
     createSms,
+    deleteSms,
+    getSmsById,
     getInviteSmsText,
+    getAllSmsPaginated,
     sendEventUpdatedSms,
     sendEventCreationSms,
     generateEventMessage,
-    generateEventReminderMessage,
     sendEventDeletionSms,
     sendNetworkBroadcastSms,
     sendEventRoleRemovalSms,
     sendRsvpRequestSmsToHost,
+    sendSmsByTagsAndSegments,
     sendEventRoleAssignmentSms,
     sendFeedNetworkBroadcastSms,
+    generateEventReminderMessage,
     sendRsvpConfirmationSmsToHost,
     sendRsvpConfirmationSmsToGuest,
     sendRsvpRequestRejectedSmsToRequester,

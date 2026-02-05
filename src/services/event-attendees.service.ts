@@ -12,6 +12,7 @@ import smsService from "./sms.service";
 import emailService from "./email.service";
 import * as eventService from "./event.service";
 import notificationService from "./notification.service";
+import { EventAttendeeCounts } from "../types/event-attendees.interface";
 
 /** Event attendees - create or manage attendees */
 const eventAttendees = async (
@@ -406,11 +407,30 @@ const eventTicketAttributes = ['id', 'name', 'ticket_type'];
 
 type AttendeeFilterParams = {
     event_id: string;
-    rsvp_status?: RSVPStatus;
+    rsvp_status?: RSVPStatus[];
     is_checked_in?: boolean;
-    ticket_type?: TicketType;
+    ticket_type?: TicketType[];
     is_connected?: boolean;
     search?: string;
+};
+
+/** Get attendee counts for an event (total, by rsvp status, checked-in) */
+const getEventAttendeeCounts = async (event_id: string): Promise<EventAttendeeCounts> => {
+    const baseWhere = { event_id, is_deleted: false };
+    const [total_guest, total_attending_guest, total_maybe_guest, total_no_guest, total_checkedin_guest] = await Promise.all([
+        EventAttendee.count({ where: baseWhere }),
+        EventAttendee.count({ where: { ...baseWhere, rsvp_status: RSVPStatus.YES } }),
+        EventAttendee.count({ where: { ...baseWhere, rsvp_status: RSVPStatus.MAYBE } }),
+        EventAttendee.count({ where: { ...baseWhere, rsvp_status: RSVPStatus.NO } }),
+        EventAttendee.count({ where: { ...baseWhere, is_checked_in: true } }),
+    ]);
+    return {
+        total_guest,
+        total_no_guest,
+        total_maybe_guest,
+        total_attending_guest,
+        total_checkedin_guest,
+    };
 };
 
 /** Get event attendees with filters, pagination, and connection status */
@@ -426,6 +446,7 @@ const getEventAttendeesWithFilters = async (
         currentPage: number;
         totalPages: number;
     };
+    counts: EventAttendeeCounts;
 }> => {
     const { event_id, rsvp_status, is_checked_in, ticket_type, is_connected, search } = filters;
     const offset = (Number(page) - 1) * Number(limit);
@@ -435,8 +456,8 @@ const getEventAttendeesWithFilters = async (
         is_deleted: false,
     };
 
-    if (rsvp_status) {
-        where.rsvp_status = rsvp_status;
+    if (rsvp_status && rsvp_status.length > 0) {
+        where.rsvp_status = { [Op.in]: rsvp_status };
     }
     if (typeof is_checked_in === 'boolean') {
         where.is_checked_in = is_checked_in;
@@ -464,10 +485,10 @@ const getEventAttendeesWithFilters = async (
         {
             model: EventTickets,
             as: 'event_ticket',
-            required: !!ticket_type,
+            required: !!(ticket_type && ticket_type.length > 0),
             where: {
                 is_deleted: false,
-                ...(ticket_type ? { ticket_type } : {}),
+                ...(ticket_type && ticket_type.length > 0 ? { ticket_type: { [Op.in]: ticket_type } } : {}),
             },
             attributes: eventTicketAttributes,
         },
@@ -560,6 +581,8 @@ const getEventAttendeesWithFilters = async (
         attendees = attendees.slice(offset, offset + Number(limit));
     }
 
+    const counts = await getEventAttendeeCounts(event_id);
+
     return {
         data: attendees,
         pagination: {
@@ -567,15 +590,17 @@ const getEventAttendeesWithFilters = async (
             currentPage: Number(page),
             totalPages: Math.ceil(totalCount / Number(limit)),
         },
+        counts,
     };
 };
 
 export default {
-    createBulkEventAttendees,
-    updateEventAttendee,
-    softDeleteEventAttendee,
-    getEventAttendeesWithFilters,
     checkInAttendee,
     uncheckInAttendee,
+    updateEventAttendee,
     updateAttendeeCheckIn,
+    getEventAttendeeCounts,
+    softDeleteEventAttendee,
+    createBulkEventAttendees,
+    getEventAttendeesWithFilters
 };

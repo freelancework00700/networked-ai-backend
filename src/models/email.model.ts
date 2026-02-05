@@ -1,26 +1,23 @@
 import User from './user.model';
+import { EmailType } from '../types/enums';
 import { sendEmail } from '../utils/smtp.service';
 import loggerService from '../utils/logger.service';
 import { DataTypes, Model, Sequelize } from 'sequelize';
 
 export class Email extends Model {
     public id!: string;
-    public user_id!: string | null;
     public bcc!: string[];
-    public type!: string;
+    public type!: EmailType;
     public subject!: string;
     public html!: string;
     public from!: string;
     public attachments!: any[] | null;
-    public is_deleted!: boolean;
     
     public created_by!: string | null;
     public updated_by!: string | null;
-    public deleted_by!: string | null;
     
     public created_at!: Date;
     public updated_at!: Date;
-    public deleted_at!: Date | null;
 
     static initModel(connection: Sequelize): void {
         Email.init(
@@ -30,17 +27,13 @@ export class Email extends Model {
                     defaultValue: DataTypes.UUIDV4,
                     primaryKey: true,
                 },
-                user_id: {
-                    type: DataTypes.UUID,
-                    allowNull: true,
-                },
                 bcc: {
                     type: DataTypes.JSON,
                     allowNull: false,
                     defaultValue: [],
                 },
                 type: {
-                    type: DataTypes.STRING(100),
+                    type: DataTypes.ENUM(...Object.values(EmailType)),
                     allowNull: false,
                 },
                 subject: {
@@ -48,7 +41,7 @@ export class Email extends Model {
                     allowNull: false,
                 },
                 html: {
-                    type: DataTypes.TEXT,
+                    type: DataTypes.TEXT('long'),
                     allowNull: false,
                 },
                 from: {
@@ -60,25 +53,12 @@ export class Email extends Model {
                     allowNull: true,
                     defaultValue: null,
                 },
-                is_deleted: {
-                    type: DataTypes.BOOLEAN,
-                    allowNull: false,
-                    defaultValue: false,
-                },
                 created_by: {
                     type: DataTypes.UUID,
                     allowNull: true,
                 },
                 updated_by: {
                     type: DataTypes.UUID,
-                    allowNull: true,
-                },
-                deleted_by: {
-                    type: DataTypes.UUID,
-                    allowNull: true,
-                },
-                deleted_at: {
-                    type: DataTypes.DATE,
                     allowNull: true,
                 },
             },
@@ -94,10 +74,8 @@ export class Email extends Model {
     }
 
     static initAssociations(): void {
-        Email.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
         Email.belongsTo(User, { foreignKey: 'created_by', as: 'created_by_user' });
         Email.belongsTo(User, { foreignKey: 'updated_by', as: 'updated_by_user' });
-        Email.belongsTo(User, { foreignKey: 'deleted_by', as: 'deleted_by_user' });
     }
 
     static initHooks(): void {

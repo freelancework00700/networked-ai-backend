@@ -75,7 +75,7 @@ export class Event extends Model {
                     allowNull: false,
                 },
                 description: {
-                    type: DataTypes.TEXT,
+                    type: DataTypes.TEXT('long'),
                     allowNull: true,
                 },
                 address: {

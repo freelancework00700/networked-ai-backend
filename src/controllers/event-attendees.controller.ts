@@ -292,12 +292,24 @@ export const getEventAttendeesWithFilters = async (req: Request, res: Response, 
         const parsedIsCheckedIn = parseBooleanQuery(is_checked_in);
         const parsedIsConnected = parseBooleanQuery(is_connected);
 
+        const parseCsvQueryValues = (value: unknown): string[] | undefined => {
+            if (typeof value !== 'string') return undefined;
+            const parts = value
+                .split(',')
+                .map(v => v.trim())
+                .filter(v => v.length > 0);
+            return parts.length > 0 ? parts : undefined;
+        };
+
+        const parsedRsvpStatuses = parseCsvQueryValues(rsvp_status) as RSVPStatus[] | undefined;
+        const parsedTicketTypes = parseCsvQueryValues(ticket_type) as TicketType[] | undefined;
+
         const attendees = await eventAttendeesService.getEventAttendeesWithFilters(
             {
                 event_id: event_id as string,
-                rsvp_status: rsvp_status as RSVPStatus | undefined,
+                rsvp_status: parsedRsvpStatuses,
                 is_checked_in: parsedIsCheckedIn,
-                ticket_type: ticket_type as TicketType | undefined,
+                ticket_type: parsedTicketTypes,
                 is_connected: parsedIsConnected,
                 search: (search as string) || undefined,
             },

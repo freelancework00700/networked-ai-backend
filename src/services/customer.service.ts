@@ -3,6 +3,22 @@ import { Op, Transaction, IncludeOptions } from 'sequelize';
 import { isNetworkTagForUser } from '../utils/tag.constants';
 import { Customer, CustomerTag, CustomerSegment, Tag, Segment } from '../models/index';
 
+/** Split tag ids into system (Network + hosted-event) and regular (user-created tags). */
+const splitTagIdsIntoRegularAndSystem = async (tagIds: string[], userId: string): Promise<{ regular: string[]; system: string[] }> => {
+    const results = await Promise.all(
+        tagIds.map(async (id) => {
+            if (isNetworkTagForUser(id, userId)) return { id, system: true };
+            if (await tagService.isHostedEventByUser(id, userId)) return { id, system: true };
+            return { id, system: false };
+        })
+    );
+
+    return {
+        regular: results.filter((r) => !r.system).map((r) => r.id),
+        system: results.filter((r) => r.system).map((r) => r.id),
+    };
+};
+
 const customerAttributes = ['id', 'name', 'email', 'mobile', 'created_at', 'updated_at', 'created_by', 'updated_by'];
 
 type PaginatedOptions = {
@@ -166,6 +182,114 @@ const setCustomerSegments = async (customerId: string, segmentIds: string[], tra
     }
 };
 
+/** Get distinct emails for customers that have at least one of the given tag_ids OR segment_ids (union). tag_ids can include system tags (Network = userId, hosted-event = event id). */
+const getDistinctEmailsByTagsAndSegments = async (
+    userId: string,
+    tag_ids: string[],
+    segment_ids: string[],
+    transaction?: Transaction
+): Promise<string[]> => {
+    const tagIds = (tag_ids || []).filter(Boolean);
+    const segmentIds = (segment_ids || []).filter(Boolean);
+    const { regular: regularTagIds, system: systemTagIds } = await splitTagIdsIntoRegularAndSystem(tagIds, userId);
+
+    const customerIds = new Set<string>();
+
+    if (regularTagIds.length > 0) {
+        const fromTags = await CustomerTag.findAll({
+            where: { tag_id: { [Op.in]: regularTagIds } },
+            attributes: ['customer_id'],
+            raw: true,
+            transaction,
+        });
+        fromTags.forEach((r) => customerIds.add(r.customer_id));
+    }
+    if (segmentIds.length > 0) {
+        const fromSegments = await CustomerSegment.findAll({
+            where: { segment_id: { [Op.in]: segmentIds } },
+            attributes: ['customer_id'],
+            raw: true,
+            transaction,
+        });
+        fromSegments.forEach((r) => customerIds.add(r.customer_id));
+    }
+
+    let customerEmails: string[] = [];
+    if (customerIds.size > 0) {
+        const customers = await Customer.findAll({
+            where: {
+                id: { [Op.in]: Array.from(customerIds) },
+                created_by: userId,
+                is_deleted: false,
+                email: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }] },
+            },
+            attributes: ['email'],
+            raw: true,
+            transaction,
+        });
+        customerEmails = customers.map((c) => c.email).filter((e): e is string => Boolean(e));
+    }
+
+    const systemEmails = systemTagIds.length > 0 ? await tagService.getDistinctEmailsForSystemTagIds(userId, systemTagIds) : [];
+    return [...new Set([...customerEmails, ...systemEmails])];
+};
+
+/** Get distinct mobile numbers for customers that have at least one of the given tag_ids OR segment_ids (union). tag_ids can include system tags. */
+const getDistinctMobilesByTagsAndSegments = async (
+    userId: string,
+    tag_ids: string[],
+    segment_ids: string[],
+    transaction?: Transaction
+): Promise<string[]> => {
+    const tagIds = (tag_ids || []).filter(Boolean);
+    const segmentIds = (segment_ids || []).filter(Boolean);
+    const { regular: regularTagIds, system: systemTagIds } = await splitTagIdsIntoRegularAndSystem(tagIds, userId);
+
+    const customerIds = new Set<string>();
+
+    if (regularTagIds.length > 0) {
+        const fromTags = await CustomerTag.findAll({
+            where: { tag_id: { [Op.in]: regularTagIds } },
+            attributes: ['customer_id'],
+            raw: true,
+            transaction,
+        });
+
+        fromTags.forEach((r) => customerIds.add(r.customer_id));
+    }
+
+    if (segmentIds.length > 0) {
+        const fromSegments = await CustomerSegment.findAll({
+            where: { segment_id: { [Op.in]: segmentIds } },
+            attributes: ['customer_id'],
+            raw: true,
+            transaction,
+        });
+
+        fromSegments.forEach((r) => customerIds.add(r.customer_id));
+    }
+
+    let customerMobiles: string[] = [];
+    if (customerIds.size > 0) {
+        const customers = await Customer.findAll({
+            where: {
+                id: { [Op.in]: Array.from(customerIds) },
+                created_by: userId,
+                is_deleted: false,
+                mobile: { [Op.and]: [{ [Op.ne]: null }, { [Op.ne]: '' }] },
+            },
+            attributes: ['mobile'],
+            raw: true,
+            transaction,
+        });
+
+        customerMobiles = customers.map((c) => c.mobile).filter((e): e is string => Boolean(e));
+    }
+
+    const systemMobiles = systemTagIds.length > 0 ? await tagService.getDistinctMobilesForSystemTagIds(userId, systemTagIds) : [];
+    return [...new Set([...customerMobiles, ...systemMobiles])];
+};
+
 export default {
     createCustomer,
     updateCustomer,
@@ -174,4 +298,6 @@ export default {
     setCustomerTags,
     setCustomerSegments,
     getAllCustomersPaginated,
+    getDistinctEmailsByTagsAndSegments,
+    getDistinctMobilesByTagsAndSegments,
 };

@@ -1,5 +1,12 @@
 import { RSVPStatus, TicketType } from "../types/enums";
 
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const csvEnumPattern = (values: string[]) => {
+    const group = values.map(escapeRegex).join('|');
+    // allow optional whitespace after commas (e.g. "Yes, No")
+    return `^(?:${group})(?:,\\s*(?:${group}))*$`;
+};
+
 /** Schema to validate event attendees */
 export const createEventAttendeeSchema = {
     type: 'object',
@@ -51,9 +58,19 @@ export const getEventAttendeesQuerySchema = {
     type: 'object',
     properties: {
         event_id: { type: 'string', format: 'uuid' },
-        rsvp_status: { type: 'string', enum: Object.values(RSVPStatus) },
+        rsvp_status: {
+            anyOf: [
+                { type: 'string', enum: Object.values(RSVPStatus) },
+                { type: 'string', pattern: csvEnumPattern(Object.values(RSVPStatus)) },
+            ],
+        },
         is_checked_in: { type: 'string', enum: ['true', 'false', '1', '0'] },
-        ticket_type: { type: 'string', enum: Object.values(TicketType) },
+        ticket_type: {
+            anyOf: [
+                { type: 'string', enum: Object.values(TicketType) },
+                { type: 'string', pattern: csvEnumPattern(Object.values(TicketType)) },
+            ],
+        },
         is_connected: { type: 'string', enum: ['true', 'false', '1', '0'] },
         page: { type: 'string', pattern: '^[0-9]+$' },
         limit: { type: 'string', pattern: '^[0-9]+$' },

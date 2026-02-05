@@ -193,6 +193,8 @@ export enum NotificationType {
 }
 
 export enum SmsType {
+    CUSTOM = 'Custom',
+    CUSTOM_EVENT = 'CustomEvent',
     RSVP_REQUEST = 'RsvpRequest',
     EVENT_UPDATE = 'EventUpdate',
     EVENT_CREATION = 'EventCreation',
@@ -210,9 +212,11 @@ export enum SmsType {
 }
 
 export enum EmailType {
+    CUSTOM = 'Custom',
     WELCOME = 'Welcome',
     POST_SHARE = 'PostShare',
     RSVP_REQUEST = 'RsvpRequest',
+    CUSTOM_EVENT = 'CustomEvent',
     EVENT_UPDATE = 'EventUpdate',
     EVENT_CREATION = 'EventCreation',
     EVENT_DELETION = 'EventDeletion',

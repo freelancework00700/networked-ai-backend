@@ -2,31 +2,20 @@ import fs from 'fs';
 import path from 'path';
 import ical from 'ical-generator';
 import env from '../utils/validate-env';
-import { Transaction } from 'sequelize';
+import { Op, Transaction } from 'sequelize';
+import customerService from './customer.service';
 import { Attachment } from 'nodemailer/lib/mailer';
 import loggerService from '../utils/logger.service';
 import { EmailType, EventParticipantRole } from '../types/enums';
 import { Email, Event, User, EventParticipant, EventAttendee } from '../models/index';
+import { SendEmailPayload, GetAllEmailsOptions, CreateEmailParams } from '../types/email.interface';
 
-
-interface CreateEmailParams {
-    type: string;
-    html: string;
-    from: string;
-    bcc?: string[];
-    subject: string;
-    user_id?: string | null;
-    attachments?: Attachment[];
-    created_by?: string | null;
-}
+const emailAttributes = ['id', 'bcc', 'type', 'subject', 'html', 'from', 'created_at', 'updated_at', 'created_by', 'updated_by'];
 
 const createEmail = async (params: CreateEmailParams, transaction?: Transaction): Promise<Email> => {
     try {
-        const userId = params.user_id ?? params.created_by ?? null;
-
         const emailRecord = await Email.create(
             {
-                user_id: userId,
                 type: params.type,
                 html: params.html,
                 from: params.from,
@@ -445,8 +434,7 @@ export const sendEventRoleRemovalEmail = async (event: Event, recipientEmail: st
                 subject,
                 bcc: [recipientEmail],
                 type: EmailType.EVENT_ROLE_REMOVAL,
-                from: '"Networked AI" <do-not-reply@net-worked.ai>',
-                created_by: (event as any)?.created_by_user?.id || null,
+                from: '"Networked AI" <do-not-reply@net-worked.ai>'
             },
             transaction
         );
@@ -743,11 +731,9 @@ export const sendEventUpdatedEmail = async (event: Event, changedFields?: string
             {
                 html,
                 subject,
-                user_id: null,
                 bcc: recipientEmails,
                 type: EmailType.EVENT_UPDATE,
-                from: '"Networked AI" <do-not-reply@net-worked.ai>',
-                created_by: (event as any)?.created_by_user?.id || null,
+                from: '"Networked AI" <do-not-reply@net-worked.ai>'
             },
             transaction
         );
@@ -790,11 +776,9 @@ export const sendEventDeletedEmail = async (event: Event, transaction?: Transact
             {
                 html,
                 subject,
-                user_id: null,
                 bcc: recipientEmails,
                 type: EmailType.EVENT_DELETION,
-                from: '"Networked AI" <do-not-reply@net-worked.ai>',
-                created_by: (event as any)?.created_by_user?.id || null,
+                from: '"Networked AI" <do-not-reply@net-worked.ai>'
             },
             transaction
         );
@@ -851,8 +835,7 @@ export const sendEventRoleAssignmentEmail = async (
                 subject,
                 bcc: [recipientEmail],
                 type: EmailType.EVENT_ROLE_ASSIGNMENT,
-                from: '"Networked AI" <do-not-reply@net-worked.ai>',
-                created_by: (event as any)?.created_by_user?.id || null,
+                from: '"Networked AI" <do-not-reply@net-worked.ai>'
             },
             transaction
         );
@@ -969,16 +952,119 @@ export const sendNetworkBroadcastEmail = async (event: Event, recipientUserIds: 
     }
 };
 
+/** Send email to customers from tag_ids and/or segment_ids; merges with payload bcc and creates one email record (hook sends in batches). */
+export const sendEmailByTagsAndSegments = async (params: SendEmailPayload, userId: string, transaction?: Transaction): Promise<Email> => {
+    const payloadBcc = Array.isArray(params.bcc) ? params.bcc : [];
+    const tagIds = Array.isArray(params.tag_ids) ? params.tag_ids : [];
+    const segmentIds = Array.isArray(params.segment_ids) ? params.segment_ids : [];
+
+    const customerEmails = await customerService.getDistinctEmailsByTagsAndSegments(userId, tagIds, segmentIds, transaction);
+    const allBcc = [...new Set([...customerEmails, ...payloadBcc])];
+
+    return createEmail(
+        {
+            bcc: allBcc,
+            type: params.type,
+            html: params.html,
+            from: params.from,
+            created_by: userId,
+            subject: params.subject,
+        },
+        transaction
+    );
+};
+
+export const getAllEmailsPaginated = async (
+    userId: string,
+    options: GetAllEmailsOptions = {}
+): Promise<{ data: any[]; pagination: { totalCount: number; currentPage: number; totalPages: number } }> => {
+    const {
+        date_to,
+        page = 1,
+        date_from,
+        limit = 10,
+        search = '',
+        order_by = 'created_at',
+        order_direction = 'DESC',
+    } = options;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    const whereClause: any = { created_by: userId };
+    if (search) {
+        whereClause[Op.or] = [
+            { subject: { [Op.like]: `%${search}%` } },
+            { from: { [Op.like]: `%${search}%` } },
+            { type: { [Op.like]: `%${search}%` } },
+        ];
+    }
+
+    if (date_from || date_to) {
+        const fromDate = date_from ? new Date(date_from) : null;
+        const toDate = date_to ? new Date(date_to) : null;
+
+        whereClause.created_at = {};
+
+        if (fromDate && !isNaN(fromDate.getTime())) whereClause.created_at[Op.gte] = fromDate;
+        if (toDate && !isNaN(toDate.getTime())) whereClause.created_at[Op.lte] = toDate;
+    }
+
+    const validOrderColumns = ['subject', 'created_at'];
+    const safeOrder = validOrderColumns.includes(order_by) ? order_by : 'created_at';
+
+    const { count, rows } = await Email.findAndCountAll({
+        offset,
+        where: whereClause,
+        limit: Number(limit),
+        attributes: emailAttributes,
+        order: [[safeOrder, order_direction]],
+    });
+
+    return {
+        data: rows.map((r: any) => (r.toJSON ? r.toJSON() : r)),
+        pagination: {
+            totalCount: count,
+            currentPage: Number(page),
+            totalPages: Math.ceil(count / Number(limit)) || 0,
+        },
+    };
+};
+
+export const getEmailById = async (id: string, userId: string, transaction?: Transaction): Promise<Email | null> => {
+    return Email.findOne({
+        transaction,
+        attributes: emailAttributes,
+        where: { id, created_by: userId },
+    });
+};
+
+export const deleteEmail = async (id: string, userId: string, transaction?: Transaction): Promise<boolean> => {
+    const email = await Email.findOne({
+        transaction,
+        attributes: ['id'],
+        where: { id, created_by: userId },
+    });
+
+    if (!email) return false;
+
+    await Email.destroy({ where: { id }, transaction });
+
+    return true;
+};
+
 export default {
+    deleteEmail,
+    getEmailById,
     sendWelcomeEmail,
     generateEventEmail,
     sendPostShareEmail,
+    getAllEmailsPaginated,
     sendEventUpdatedEmail,
     sendEventDeletedEmail,
     sendEventCreationEmail,
     sendNetworkRequestEmail,
     sendEventRoleRemovalEmail,
     sendNetworkBroadcastEmail,
+    sendEmailByTagsAndSegments,
     sendRsvpRequestEmailToHost,
     sendEventRoleAssignmentEmail,
     sendRsvpConfirmationEmailToHost,

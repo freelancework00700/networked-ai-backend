@@ -369,6 +369,127 @@ const getTagCustomersPaginated = async (
     };
 };
 
+/** Get distinct emails for system tag ids (Network = userId, hosted-event = event ids). Used when sending email by tags that can include system tags. */
+const getDistinctEmailsForSystemTagIds = async (userId: string, systemTagIds: string[]): Promise<string[]> => {
+    const ids = (systemTagIds || []).filter(Boolean);
+    if (ids.length === 0) return [];
+
+    const allEmails: string[] = [];
+
+    // Network tag
+    if (ids.includes(userId)) {
+        const connections = await UserNetwork.findAll({
+            where: { user_id: userId, is_deleted: false },
+            attributes: ['peer_id'],
+            raw: true,
+        });
+
+        const peerIds = [...new Set(connections.map((c) => c.peer_id))];
+
+        if (peerIds.length > 0) {
+            const users = await User.findAll({
+                where: { id: { [Op.in]: peerIds }, is_deleted: false },
+                attributes: ['email'],
+                raw: true,
+            });
+            
+            users.forEach((u) => {
+                if (u.email) allEmails.push(u.email);
+            });
+        }
+    }
+
+    // Hosted events tag
+    const hostedEventIds = await Promise.all(ids.filter((id) => id !== userId).map((id) => isHostedEventByUser(id, userId).then((ok) => (ok ? id : null))));
+    const eventIds = hostedEventIds.filter((id): id is string => id !== null);
+    for (const eventId of eventIds) {
+        const [attendees, participants] = await Promise.all([
+            EventAttendee.findAll({ where: { event_id: eventId, is_deleted: false }, attributes: ['user_id'], raw: true }),
+            EventParticipant.findAll({
+                where: { event_id: eventId, role: { [Op.ne]: EventParticipantRole.HOST }, is_deleted: false },
+                attributes: ['user_id'],
+                raw: true,
+            }),
+        ]);
+
+        const userIds = [...new Set([...attendees.map((a) => a.user_id), ...participants.map((p) => p.user_id)])];
+
+        if (userIds.length > 0) {
+            const users = await User.findAll({
+                where: { id: { [Op.in]: userIds }, is_deleted: false },
+                attributes: ['email'],
+                raw: true,
+            });
+
+            users.forEach((u) => {
+                if (u.email) allEmails.push(u.email);
+            });
+        }
+    }
+
+    return [...new Set(allEmails)];
+};
+
+/** Get distinct mobile numbers for system tag ids (Network = userId, hosted-event = event ids). Used when sending SMS by tags that can include system tags. */
+const getDistinctMobilesForSystemTagIds = async (userId: string, systemTagIds: string[]): Promise<string[]> => {
+    const ids = (systemTagIds || []).filter(Boolean);
+    if (ids.length === 0) return [];
+
+    const allMobiles: string[] = [];
+
+    // Network tag
+    if (ids.includes(userId)) {
+        const connections = await UserNetwork.findAll({
+            where: { user_id: userId, is_deleted: false },
+            attributes: ['peer_id'],
+            raw: true,
+        });
+
+        const peerIds = [...new Set(connections.map((c) => c.peer_id))];
+        if (peerIds.length > 0) {
+            const users = await User.findAll({
+                where: { id: { [Op.in]: peerIds }, is_deleted: false },
+                attributes: ['mobile'],
+                raw: true,
+            });
+
+            users.forEach((u) => {
+                if (u.mobile) allMobiles.push(u.mobile);
+            });
+        }
+    }
+
+    // Hosted events tag
+    const hostedEventIds = await Promise.all(ids.filter((id) => id !== userId).map((id) => isHostedEventByUser(id, userId).then((ok) => (ok ? id : null))));
+    const eventIds = hostedEventIds.filter((id): id is string => id !== null);
+    for (const eventId of eventIds) {
+        const [attendees, participants] = await Promise.all([
+            EventAttendee.findAll({ where: { event_id: eventId, is_deleted: false }, attributes: ['user_id'], raw: true }),
+            EventParticipant.findAll({
+                where: { event_id: eventId, role: { [Op.ne]: EventParticipantRole.HOST }, is_deleted: false },
+                attributes: ['user_id'],
+                raw: true,
+            }),
+        ]);
+
+        const userIds = [...new Set([...attendees.map((a) => a.user_id), ...participants.map((p) => p.user_id)])];
+
+        if (userIds.length > 0) {
+            const users = await User.findAll({
+                where: { id: { [Op.in]: userIds }, is_deleted: false },
+                attributes: ['mobile'],
+                raw: true,
+            });
+
+            users.forEach((u) => {
+                if (u.mobile) allMobiles.push(u.mobile);
+            });
+        }
+    }
+
+    return [...new Set(allMobiles)];
+};
+
 export default {
     deleteTag,
     createTag,
@@ -379,4 +500,6 @@ export default {
     getHostedEventIdsForUser,
     getTagCustomersPaginated,
     getAssignableTagIdsForUser,
+    getDistinctEmailsForSystemTagIds,
+    getDistinctMobilesForSystemTagIds,
 };
