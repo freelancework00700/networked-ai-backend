@@ -413,56 +413,6 @@ export const getLikedEvents = async (req: Request, res: Response, next: NextFunc
     }
 };
 
-/** Get user events (for authenticated user or specified user_id via query param) with pagination and search */
-export const getUserEvents = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const authUserId = res.locals.auth?.user?.id;
-        
-        // If user_id is provided in query, use it; otherwise use authenticated user's ID
-        const targetUserId = (req.query.user_id as string) || authUserId;
-
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
-        const search = (req.query.search as string) || '';
-        const is_upcoming_event = req.query.is_upcoming_event === 'true';
-
-        let roles: string[] = [];
-        if (req.query.roles) {
-            if (Array.isArray(req.query.roles)) {
-                roles = req.query.roles as string[];
-            }
-            else if (typeof req.query.roles === 'string') {
-                roles = req.query.roles.split(',').map(role => role.trim()).filter(role => role.length > 0);
-            }
-        }
-
-        const result = await eventService.getUserEventsPaginated(
-            targetUserId,
-            page,
-            limit,
-            search,
-            roles,
-            is_upcoming_event,
-            authUserId
-        );
-        if (!result.data.length) {
-            return sendSuccessResponse(res, responseMessages.event.notFound, result);
-        }
-
-        // Transform events with is_like flag
-        const transformedEvents = await eventService.transformEventsWithLike(result.data, authUserId);
-
-        return sendSuccessResponse(res, responseMessages.event.retrieved, {
-            ...result,
-            data: transformedEvents,
-        });
-    } catch (error) {
-        loggerService.error(`Error getting user events: ${error}`);
-        sendServerErrorResponse(res, responseMessages.event.failedToFetch, error);
-        next(error);
-    }
-};
-
 /** Get all events with pagination, search, sorting and filters */
 export const getAllEvents = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -470,7 +420,7 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
         const limit = parseInt(req.query.limit as string) || 10;
         const search = (req.query.search as string) || '';
         const orderBy = (req.query.order_by as string) || 'start_date';
-        const orderDirection = (req.query.order_direction as string) || 'ASC';
+        const orderDirection = (req.query.order_direction as string) || 'DESC';
         const authUserId = res.locals.auth?.user?.id ?? null;
         const isAuthenticated = !!authUserId;
 
@@ -491,6 +441,8 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
             is_liked?: boolean;
             is_upcoming_event?: boolean;
             is_recommended?: boolean;
+            is_live?: boolean;
+            is_completed?: boolean;
         } = {};
 
         if (req.query.start_date) filters.start_date = req.query.start_date as string;
@@ -531,6 +483,12 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
         if (req.query.is_recommended !== undefined) {
             filters.is_recommended = req.query.is_recommended === 'true';
         }
+        if (req.query.is_live !== undefined) {
+            filters.is_live = req.query.is_live === 'true';
+        }
+        if (req.query.is_completed !== undefined) {
+            filters.is_completed = req.query.is_completed === 'true';
+        }
 
         // If not authenticated, only show public events
         // If authenticated, show all events (unless explicitly filtered)
@@ -557,31 +515,6 @@ export const getAllEvents = async (req: Request, res: Response, next: NextFuncti
         });
     } catch (error) {
         loggerService.error(`Error listing events: ${error}`);
-        sendServerErrorResponse(res, responseMessages.event.failedToFetch, error);
-        next(error);
-    }
-};
-
-/** Get recommended events for the authenticated user based on matching vibes */
-export const getRecommendedEvents = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
-        const search = (req.query.search as string) || '';
-        const authUserId = res.locals.auth?.user?.id ?? null;
-
-        // Recommended should still respect public/private filters; if no explicit filter, use all events
-        const result = await eventService.getRecommendedEventsPaginated(page, limit, search);
-
-        // Transform events with is_like flag
-        const transformedEvents = await eventService.transformEventsWithLike(result.data, authUserId);
-
-        return sendSuccessResponse(res, responseMessages.event.retrieved, {
-            ...result,
-            data: transformedEvents,
-        });
-    } catch (error) {
-        loggerService.error(`Error getting recommended events: ${error}`);
         sendServerErrorResponse(res, responseMessages.event.failedToFetch, error);
         next(error);
     }

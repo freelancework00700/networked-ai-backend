@@ -16,8 +16,6 @@ import {
     updateEvent,
     deleteEvent,
     getAllEvents,
-    getRecommendedEvents,
-    getUserEvents,
     getLikedEvents,
     getEventByIdOrSlug,
     createEventView,
@@ -55,11 +53,7 @@ eventRouter.delete('/:id', authenticateToken, deleteEvent);
 
 // Optional auth: unauthenticated users see only public events, authenticated users see all
 eventRouter.get('/', optionalAuthenticateToken, getAllEvents);
-eventRouter.get('/recommendations', optionalAuthenticateToken, getRecommendedEvents);
 eventRouter.get('/top-cities', optionalAuthenticateToken, getTopCities);
-
-// Get user events (requires authentication, accepts optional user_id query param)
-eventRouter.get('/user-events', optionalAuthenticateToken, getUserEvents);
 
 // Get liked events (requires authentication)
 eventRouter.get('/liked', authenticateToken, getLikedEvents);

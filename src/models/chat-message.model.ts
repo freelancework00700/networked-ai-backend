@@ -159,6 +159,7 @@ export class ChatMessage extends Model {
                                 post_id: message.feed_id || null,
                                 event_id: message.event_id || null,
                                 type: NotificationType.CHAT_MESSAGE,
+                                chat_room_id: message.chat_room_id || null,
                                 related_user_id: message.posted_by_user_id,
                             },
                             { transaction: options?.transaction }

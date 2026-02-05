@@ -1,4 +1,6 @@
+import tagService from './tag.service';
 import { Op, Transaction, IncludeOptions } from 'sequelize';
+import { isNetworkTagForUser } from '../utils/tag.constants';
 import { Customer, CustomerTag, CustomerSegment, Tag, Segment } from '../models/index';
 
 const customerAttributes = ['id', 'name', 'email', 'mobile', 'created_at', 'updated_at', 'created_by', 'updated_by'];
@@ -131,17 +133,24 @@ const updateCustomer = async (
 };
 
 const deleteCustomer = async (id: string, userId: string, transaction?: Transaction): Promise<void> => {
-    await Customer.update(
-        { is_deleted: true, deleted_at: new Date(), deleted_by: userId },
-        { where: { id, is_deleted: false, created_by: userId }, transaction }
-    );
+    const customer = await Customer.findOne({
+        transaction,
+        attributes: ['id'],
+        where: { id, is_deleted: false, created_by: userId },
+    });
+    if (!customer) return;
+
+    await Customer.destroy({ where: { id }, transaction });
 };
 
-const setCustomerTags = async (customerId: string, tagIds: string[], transaction?: Transaction): Promise<void> => {
+const setCustomerTags = async (customerId: string, tagIds: string[], userId: string, transaction?: Transaction): Promise<void> => {
+    const hostedEventIds = await tagService.getHostedEventIdsForUser(userId);
+    const hostedSet = new Set(hostedEventIds);
+    const assignableTagIds = (tagIds || []).filter((id) => !isNetworkTagForUser(id, userId) && !hostedSet.has(id));
     await CustomerTag.destroy({ where: { customer_id: customerId }, transaction });
-    if (tagIds.length) {
+    if (assignableTagIds.length) {
         await CustomerTag.bulkCreate(
-            tagIds.map((tag_id) => ({ customer_id: customerId, tag_id })),
+            assignableTagIds.map((tag_id) => ({ customer_id: customerId, tag_id })),
             { transaction }
         );
     }

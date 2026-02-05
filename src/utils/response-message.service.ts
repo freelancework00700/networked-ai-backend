@@ -610,6 +610,8 @@ export const responseMessages = {
         failedToUpdate: 'Failed to update tag.',
         deleted: 'Tag deleted successfully.',
         failedToDelete: 'Failed to delete tag.',
+        systemTagNotEditable: 'System tag cannot be edited.',
+        systemTagNotDeletable: 'System tag cannot be deleted.'
     },
     // Module: Customer
     customer: {

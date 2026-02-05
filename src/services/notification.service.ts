@@ -1,5 +1,6 @@
 import userService from './user.service';
 import { IncludeOptions } from 'sequelize';
+import chatRoomService from './chat-room.service';
 import { Sequelize, Transaction } from 'sequelize';
 import loggerService from '../utils/logger.service';
 import { Notification } from '../models/notification.model';
@@ -108,7 +109,42 @@ const getNotificationIncludes = (userId: string): IncludeOptions[] => {
             required: false,
             attributes: ['id', 'name', 'username', 'email', 'image_url', 'thumbnail_url'],
         },
+        {
+            model: ChatRoom,
+            as: 'chat_room',
+            required: false,
+            attributes: ['id', 'name', 'is_personal', 'event_id', 'user_ids', 'deleted_users', 'profile_image', 'event_image', 'is_broadcast', 'created_at'],
+        },
     ];
+};
+
+/**
+ * Attach full chat room (users, last message, etc.) to notifications that have chat_room_id
+ * @param notifications - Array of notifications (plain or model instances)
+ * @param transaction - Optional database transaction
+ */
+const addFullChatRoomToNotifications = async (notifications: any[], transaction?: Transaction): Promise<void> => {
+    const withChatRoom = notifications.filter((n: any) => n.chat_room_id && (n.chat_room?.user_ids != null || n.dataValues?.chat_room?.user_ids != null));
+    if (withChatRoom.length === 0) return;
+    for (const notification of withChatRoom) {
+        try {
+            const chatRoom = notification.chat_room || notification.dataValues?.chat_room;
+            const roomId = notification.chat_room_id || notification.dataValues?.chat_room_id;
+            if (!chatRoom || !roomId) continue;
+            const userIds = chatRoom.user_ids || [];
+            const deletedUsers = chatRoom.deleted_users || [];
+            const fullRoom = await chatRoomService.getRoomInfoWithUsersAndLastMessage(roomId, userIds, deletedUsers, transaction);
+            if (fullRoom) {
+                if (typeof notification.setDataValue === 'function') {
+                    notification.setDataValue('chat_room', fullRoom);
+                } else {
+                    notification.chat_room = fullRoom;
+                }
+            }
+        } catch (err: any) {
+            loggerService.error(`Error attaching full chat room to notification: ${err?.message || err}`);
+        }
+    }
 };
 
 /**
@@ -408,6 +444,9 @@ export const getNotificationWithAssociations = async (notificationId: string, us
         // Add connection status to related_user if exists
         await addConnectionStatusToNotifications([notification], userId, transaction);
 
+        // Attach full chat room when chat_room_id is present
+        await addFullChatRoomToNotifications([notification], transaction);
+
         return notification;
     } catch (error: any) {
         loggerService.error(`Error fetching notification with associations: ${error.message || error}`);
@@ -459,6 +498,9 @@ export const getNotificationsPaginated = async (
 
     // Add connection status to related_users
     await addConnectionStatusToNotifications(notifications, userId);
+
+    // Attach full chat room to notifications that have chat_room_id
+    await addFullChatRoomToNotifications(notifications);
 
     return {
         data: notifications,
@@ -751,6 +793,7 @@ export const sendMessageNotification = async (senderName: string, senderId: stri
                         body,
                         title,
                         user_id: userId,
+                        chat_room_id: chatRoomId,
                         related_user_id: senderId,
                         type: NotificationType.NETWORK,
                     },
@@ -901,6 +944,94 @@ export const sendMentionNotification = async (
     }
 };
 
+/**
+ * Notify all participants when a group chat room is created.
+ * @param roomId - Chat room ID
+ * @param participantUserIds - All user IDs in the room (including creator)
+ * @param roomName - Display name of the room
+ * @param createdById - User ID who created the room
+ * @param createdByName - Display name of the creator
+ * @param transaction - Optional transaction
+ */
+export const sendChatRoomCreatedNotification = async (
+    roomId: string,
+    participantUserIds: string[],
+    roomName: string | null,
+    createdById: string | null,
+    createdByName: string | null,
+    transaction?: Transaction
+): Promise<Notification[]> => {
+    try {
+        if (!participantUserIds || participantUserIds.length === 0) return [];
+        const title = 'New group chat';
+        const body = createdByName
+            ? `${createdByName} created a group "${roomName || 'Chat'}" and added you.`
+            : `You were added to group "${roomName || 'Chat'}".`;
+        const notifications = await Promise.all(
+            participantUserIds.map((userId: string) =>
+                Notification.create(
+                    {
+                        body,
+                        title,
+                        user_id: userId,
+                        chat_room_id: roomId,
+                        related_user_id: createdById,
+                        type: NotificationType.CHAT_ROOM_CREATED,
+                    },
+                    { transaction }
+                )
+            )
+        );
+        loggerService.info(`Chat room created notifications sent to ${notifications.length} participants`);
+        return notifications;
+    } catch (error: any) {
+        loggerService.error(`Error sending chat room created notifications: ${error.message}`);
+        return [];
+    }
+};
+
+/**
+ * Notify a user when they are added to an existing group chat.
+ * @param roomId - Chat room ID
+ * @param newMemberUserId - User ID who was added
+ * @param roomName - Display name of the room
+ * @param addedById - User ID who added the member
+ * @param addedByName - Display name of the user who added
+ * @param transaction - Optional transaction
+ */
+export const sendChatRoomMemberAddedNotification = async (
+    roomId: string,
+    newMemberUserId: string,
+    roomName: string | null,
+    addedById: string | null,
+    addedByName: string | null,
+    transaction?: Transaction
+): Promise<Notification | null> => {
+    try {
+        if (!newMemberUserId) return null;
+        const title = 'Added to group';
+        const body = addedByName
+            ? `${addedByName} added you to group "${roomName || 'Chat'}".`
+            : `You were added to group "${roomName || 'Chat'}".`;
+        const notification = await Notification.create(
+            {
+                body,
+                title,
+                user_id: newMemberUserId,
+                chat_room_id: roomId,
+                related_user_id: addedById,
+                type: NotificationType.CHAT_ROOM_MEMBER_ADDED,
+            },
+            { transaction }
+        );
+        loggerService.info(`Chat room member added notification sent to ${newMemberUserId}`);
+        return notification;
+    } catch (error: any) {
+        loggerService.error(`Error sending chat room member added notification: ${error.message}`);
+        return null;
+    }
+};
+
 const notificationService = {
     markNotificationAsRead,
     sendMessageNotification,
@@ -917,8 +1048,10 @@ const notificationService = {
     sendPostCommentedNotification,
     sendNetworkRequestNotification,
     getNotificationWithAssociations,
+    sendChatRoomCreatedNotification,
     sendEventRoleRemovalNotification,
     sendRsvpRequestNotificationToHost,
+    sendChatRoomMemberAddedNotification,
     sendEventRoleAssignmentNotification,
     sendNetworkRequestAcceptedNotification,
     sendRsvpConfirmationNotificationToHost,

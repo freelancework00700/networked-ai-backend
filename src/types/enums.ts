@@ -186,7 +186,9 @@ export enum NotificationType {
     COMMENT_REPLY = 'CommentReply',
     POST_COMMENTED = 'PostCommented',
     EVENT_REMINDER = 'EventReminder',
+    CHAT_ROOM_CREATED = 'ChatRoomCreated',
     RSVP_REQUEST_STATUS = 'RsvpRequestStatus',
+    CHAT_ROOM_MEMBER_ADDED = 'ChatRoomMemberAdded',
     POST_EVENT_QUESTIONNAIRE = 'PostEventQuestionnaire',
 }
 

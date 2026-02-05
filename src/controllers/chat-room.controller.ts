@@ -4,6 +4,7 @@ import messageService from '../services/message.service';
 import chatRoomService from '../services/chat-room.service';
 import feedSharedService from '../services/feed-shared.service';
 import { emitRoomCreated, emitRoomUpdated, emitUserJoined } from '../socket/event';
+import notificationService from '../services/notification.service';
 import loggerService from '../utils/logger.service';
 import { responseMessages } from '../utils/response-message.service';
 import { sendBadRequestResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } from '../utils/response.service';
@@ -129,6 +130,18 @@ export const createChatRoom = async (req: Request, res: Response, next: NextFunc
         // Notify via WebSockets
         await emitRoomCreated(chatRoom.id, transaction);
 
+        // Notify all participants that the group was created (only for group rooms, not 1:1)
+        if (!is_personal && allUserIds.length > 0) {
+            await notificationService.sendChatRoomCreatedNotification(
+                chatRoom.id,
+                allUserIds,
+                name || chatRoom.name || null,
+                authenticatedUser?.id || null,
+                (authenticatedUser as any)?.name || null,
+                transaction
+            );
+        }
+
         await transaction.commit();
         return sendSuccessResponse(res, responseMessages.chatRoom.created, chatRoom);
     } catch (error) {
@@ -240,6 +253,19 @@ export const joinRoom = async (req: Request, res: Response, next: NextFunction) 
                 emitUserJoined(chat_room_id, userId);
             }
             await emitRoomUpdated(chat_room_id);
+            // Notify each new member that they were added to the group
+            const roomName = chatRoom.name || null;
+            const addedByName = (authenticatedUser as any)?.name || null;
+            const addedById = authenticatedUser?.id || null;
+            for (const userId of newUsers) {
+                await notificationService.sendChatRoomMemberAddedNotification(
+                    chat_room_id,
+                    userId,
+                    roomName,
+                    addedById,
+                    addedByName
+                );
+            }
         }
 
         return sendSuccessResponse(res, responseMessages.chatRoom.userJoined, { chat_room_id });

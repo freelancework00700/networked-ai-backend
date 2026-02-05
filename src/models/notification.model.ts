@@ -1,6 +1,7 @@
 import User from './user.model';
 import Feed from './feed.model';
 import Event from './event.model';
+import ChatRoom from './chat-room.model';
 import FeedComment from './feed-comment.model';
 import { NotificationType } from '../types/enums';
 import loggerService from '../utils/logger.service';
@@ -18,6 +19,7 @@ export class Notification extends Model {
     public event_id!: string | null;
     public post_id!: string | null;
     public comment_id!: string | null;
+    public chat_room_id!: string | null;
     public related_user_id!: string | null;
     public is_read!: boolean;
     public read_at!: Date | null;
@@ -64,6 +66,10 @@ export class Notification extends Model {
                     allowNull: true,
                 },
                 comment_id: {
+                    type: DataTypes.UUID,
+                    allowNull: true,
+                },
+                chat_room_id: {
                     type: DataTypes.UUID,
                     allowNull: true,
                 },
@@ -118,6 +124,7 @@ export class Notification extends Model {
         Notification.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
         Notification.belongsTo(Feed, { foreignKey: 'post_id', as: 'feed' });
         Notification.belongsTo(FeedComment, { foreignKey: 'comment_id', as: 'comment' });
+        Notification.belongsTo(ChatRoom, { foreignKey: 'chat_room_id', as: 'chat_room' });
         Notification.belongsTo(User, { foreignKey: 'related_user_id', as: 'related_user' });
         Notification.belongsTo(User, { foreignKey: 'created_by', as: 'created_by_user' });
         Notification.belongsTo(User, { foreignKey: 'updated_by', as: 'updated_by_user' });

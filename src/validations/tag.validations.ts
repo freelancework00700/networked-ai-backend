@@ -24,6 +24,7 @@ export const getAllTagsSchema = {
         search: { type: 'string', maxLength: 255 },
         order_by: { type: 'string', enum: ['name', 'created_at'] },
         order_direction: { type: 'string', enum: ['ASC', 'DESC'] },
+        exclude_system_tag: { type: 'string', enum: ['true', 'false'] },
     },
     additionalProperties: false,
 };

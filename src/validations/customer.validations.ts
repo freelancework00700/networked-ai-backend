@@ -1,9 +1,11 @@
 export const createCustomerSchema = {
     type: 'object',
     properties: {
-        name: { type: 'string', minLength: 1, maxLength: 255 },
+        is_all_tag: { type: 'boolean' },
+        is_all_segment: { type: 'boolean' },
         email: { type: ['string', 'null'], maxLength: 255 },
         mobile: { type: ['string', 'null'], maxLength: 50 },
+        name: { type: 'string', minLength: 1, maxLength: 255 },
         tag_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
         segment_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
     },
@@ -14,9 +16,11 @@ export const createCustomerSchema = {
 export const updateCustomerSchema = {
     type: 'object',
     properties: {
-        name: { type: 'string', minLength: 1, maxLength: 255 },
+        is_all_tag: { type: 'boolean' },
+        is_all_segment: { type: 'boolean' },
         email: { type: ['string', 'null'], maxLength: 255 },
         mobile: { type: ['string', 'null'], maxLength: 50 },
+        name: { type: 'string', minLength: 1, maxLength: 255 },
         tag_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
         segment_ids: { type: 'array', items: { type: 'string', format: 'uuid' } },
     },

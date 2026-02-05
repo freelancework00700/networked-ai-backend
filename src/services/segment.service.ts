@@ -112,12 +112,15 @@ const updateSegment = async (id: string, data: Partial<{ name: string }>, userId
     );
 };
 
-/** Soft delete segment. */
 const deleteSegment = async (id: string, userId: string, transaction?: Transaction): Promise<void> => {
-    await Segment.update(
-        { is_deleted: true, deleted_at: new Date(), deleted_by: userId },
-        { where: { id, is_deleted: false, created_by: userId }, transaction }
-    );
+    const segment = await Segment.findOne({
+        transaction,
+        attributes: ['id'],
+        where: { id, is_deleted: false, created_by: userId },
+    });
+    if (!segment) return;
+
+    await Segment.destroy({ where: { id }, transaction });
 };
 
 /** Get customers for a segment with pagination, search (name/email/mobile), order. */
@@ -176,11 +179,21 @@ const getSegmentCustomersPaginated = async (
     };
 };
 
+/** All segment ids for the user (for assigning all segments to a customer). */
+const getSegmentIdsForUser = async (userId: string): Promise<string[]> => {
+    const segments = await Segment.findAll({
+        where: { is_deleted: false, created_by: userId },
+        attributes: ['id'],
+    });
+    return segments.map((s) => s.id);
+};
+
 export default {
     deleteSegment,
     createSegment,
     updateSegment,
     getSegmentById,
+    getSegmentIdsForUser,
     getAllSegmentsPaginated,
     getSegmentCustomersPaginated,
 };

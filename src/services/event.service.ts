@@ -2097,163 +2097,6 @@ export const getEventHostByEventId = async (eventId: string) => {
     });
 };
 
-/** Get user events (created by user) with pagination and search */
-export const getUserEventsPaginated = async (
-    userId: string,
-    page: number = 1,
-    limit: number = 10,
-    search: string = '',
-    roles?: string[],
-    is_upcoming_event: boolean = false,
-    authUserId?: string | null
-): Promise<{
-    data: Event[];
-    pagination: {
-        totalCount: number;
-        currentPage: number;
-        totalPages: number;
-    };
-}> => {
-    const hasAuthUserId = typeof authUserId === 'string' && authUserId.length > 0;
-    if (!userId || typeof userId !== 'string' || userId.length === 0) {
-        return {
-            data: [],
-            pagination: {
-                totalCount: 0,
-                currentPage: Number(page),
-                totalPages: 0,
-            },
-        };
-    }
-
-    const offset = (Number(page) - 1) * Number(limit);
-
-    const whereClause: any = {
-        is_deleted: false,
-    };
-
-    // Filter only upcoming events if requested
-    if (is_upcoming_event) {
-        whereClause.start_date = { [Op.gte]: new Date() };
-    }
-
-    const normalizedRoles = roles?.map(r => r.toLowerCase());
-    const hasHostRole = normalizedRoles?.includes('host');
-    const hasAttendeeRole = normalizedRoles?.includes('attendees');
-
-    const participantRoles = normalizedRoles?.filter(
-        r => r !== 'host' && r !== 'attendees'
-    );
-
-    // Fetch event IDs from EventParticipant / EventAttendee
-    const getEventIds = async (): Promise<string[]> => {
-        const eventIds: string[] = [];
-
-        if (!roles?.length || (participantRoles?.length && participantRoles?.length > 0)) {
-            const participantEvents = await EventParticipant.findAll({
-                where: {
-                    user_id: userId,
-                    is_deleted: false,
-                    ...(participantRoles?.length && { role: { [Op.in]: participantRoles } }),
-                },
-                attributes: ['event_id'],
-            });
-            eventIds.push(...participantEvents.map(p => p.event_id));
-        }
-
-        if (!roles?.length || (hasAttendeeRole)) {
-            const attendeeEvents = await EventAttendee.findAll({
-                where: {
-                    user_id: userId,
-                    is_deleted: false,
-                },
-                attributes: ['event_id'],
-            });
-            eventIds.push(...attendeeEvents.map(a => a.event_id));
-        }
-
-        return [...new Set(eventIds)];
-    };
-
-    const eventIds = await getEventIds();
-
-    const conditions: any[] = [];
-
-    if (!roles?.length || hasHostRole) {
-        conditions.push({ created_by: userId });
-    }
-
-    if (eventIds.length) {
-        conditions.push({ id: { [Op.in]: eventIds } });
-    }
-
-    whereClause[Op.or] = conditions.length ? conditions : [{ id: { [Op.in]: [] } }];
-
-    if (search) {
-        whereClause.title = { [Op.like]: `%${search}%` };
-    }
-
-    const { count, rows } = await Event.findAndCountAll({
-        attributes: [...eventAttributes, 'created_at', 'created_by'],
-        where: whereClause,
-        include: [
-            ...includeSettings,
-            {
-                model: EventAttendee,
-                as: 'attendees',
-                required: false,
-                attributes: eventAttendeeAttributes,
-                where:
-                    hasAuthUserId
-                        ? { is_deleted: false, user_id: authUserId! }
-                        : { is_deleted: false, user_id: { [Op.in]: [] } },
-                include: [{
-                    model: User,
-                    as: 'user',
-                    required: false,
-                    where: { is_deleted: false },
-                    attributes: userAttributes,
-                }]
-            },
-            {
-                model: EventParticipant,
-                attributes: eventParticipantAttributes,
-                as: 'participants',
-                required: false,
-                where: {
-                    is_deleted: false,
-                    [Op.or]: hasAuthUserId
-                        ? [
-                            { role: EventParticipantRole.HOST },
-                            { user_id: authUserId! },
-                        ]
-                        : [{ role: EventParticipantRole.HOST }],
-                },
-                include: [{
-                    model: User,
-                    as: 'user',
-                    required: false,
-                    where: { is_deleted: false },
-                    attributes: userAttributes,
-                }]
-            }
-        ],
-        order: [['created_at', 'DESC']],
-        limit: Number(limit),
-        offset,
-        distinct: true,
-    });
-
-    return {
-        data: rows,
-        pagination: {
-            totalCount: count,
-            currentPage: Number(page),
-            totalPages: Math.ceil(count / Number(limit)),
-        },
-    };
-};
-
 /** Get all events with pagination, search, sorting and filters */
 export const getAllEventsPaginated = async (
     page: number = 1,
@@ -2278,6 +2121,8 @@ export const getAllEventsPaginated = async (
         is_liked?: boolean;
         is_upcoming_event?: boolean;
         is_recommended?: boolean;
+        is_live?: boolean;
+        is_completed?: boolean;
     },
     authUserId?: string | null
 ): Promise<{
@@ -2302,31 +2147,36 @@ export const getAllEventsPaginated = async (
         ];
     }
 
-    // Filter by event date range
+    // Filter by event date range (skip when is_live or is_completed is set)
     if (filters?.start_date || filters?.end_date) {
         const dateFilter: any = {};
-        
+
         if (filters.start_date && filters.end_date) {
             // Both dates provided: show events within the date range
             dateFilter[Op.gte] = new Date(filters.start_date);
             dateFilter[Op.lte] = new Date(filters.end_date);
         } else if (filters.start_date) {
-            // Only start_date provided: show events on that specific day only
-            const startDate = new Date(filters.start_date);
-            const startOfDay = new Date(startDate);
-            startOfDay.setHours(0, 0, 0, 0);
-            
-            const endOfDay = new Date(startDate);
-            endOfDay.setHours(23, 59, 59, 999);
-            
-            dateFilter[Op.gte] = startOfDay;
-            dateFilter[Op.lte] = endOfDay;
+            // Only start_date provided: show all future events from that date (event.start_date >= start_date)
+            dateFilter[Op.gte] = new Date(filters.start_date);
         } else if (filters.end_date) {
             // Only end_date provided: show events up to that date
             dateFilter[Op.lte] = new Date(filters.end_date);
         }
-        
+
         whereClause.start_date = dateFilter;
+    }
+
+    if (filters?.end_date) {
+        whereClause.end_date = { [Op.lte]: new Date(filters.end_date) };
+    }
+
+    // Filter: live or completed (mutually exclusive)
+    if (filters?.is_live) {
+        const now = new Date();
+        whereClause.start_date = { [Op.lte]: now };
+        whereClause.end_date = { [Op.gte]: now };
+    } else if (filters?.is_completed) {
+        whereClause.end_date = { [Op.lt]: new Date() };
     }
 
     // Filter by location (city, state, country)
@@ -2367,7 +2217,7 @@ export const getAllEventsPaginated = async (
     // Filter for recommended events (public events with future end_date)
     if (filters?.is_recommended) {
         whereClause.is_public = true;
-        whereClause.end_date = { [Op.gte]: new Date() };
+        // whereClause.end_date = { [Op.gte]: new Date() };
     }
 
     if (filters?.latitude && filters?.longitude && filters?.radius) {
@@ -2550,47 +2400,50 @@ export const getAllEventsPaginated = async (
         }
     }
 
-    // Build include array - conditionally add participants and attendees if user is authenticated
+    // Build include array - always include host participant; if authUserId present also include that user's participant and attendees
     const includeArray: IncludeOptions[] = [...includeSettings];
-    
+
+    const participantWhere: any = {
+        is_deleted: false,
+        ...(authUserId
+            ? { [Op.or]: [{ role: EventParticipantRole.HOST }, { user_id: authUserId }] }
+            : { role: EventParticipantRole.HOST }),
+    };
+    includeArray.push({
+        model: EventParticipant,
+        attributes: eventParticipantAttributes,
+        as: 'participants',
+        required: false,
+        where: participantWhere,
+        include: [{
+            model: User,
+            as: 'user',
+            required: false,
+            where: { is_deleted: false },
+            attributes: userAttributes,
+        }]
+    });
+
     if (authUserId) {
-        // Only include current user's participant and attendee data
         includeArray.push(
             {
-                model: EventParticipant,
-                attributes: eventParticipantAttributes,
-                as: 'participants',
-                required: false,
-                where: {
-                    is_deleted: false,
-                    user_id: authUserId
-                },
-                include: [{
-                    model: User,
-                    as: 'user',
-                    required: false,
-                    where: { is_deleted: false },
-                    attributes: userAttributes,
-                }]
+            model: EventAttendee,
+            as: 'attendees',
+            required: false,
+            where: {
+                is_deleted: false,
+                user_id: authUserId
             },
-            {
-                model: EventAttendee,
-                as: 'attendees',
+            attributes: eventAttendeeAttributes,
+            include: [{
+                model: User,
+                as: 'user',
                 required: false,
-                where: {
-                    is_deleted: false,
-                    user_id: authUserId
-                },
-                attributes: eventAttendeeAttributes,
-                include: [{
-                    model: User,
-                    as: 'user',
-                    required: false,
-                    where: { is_deleted: false },
-                    attributes: userAttributes,
-                }]
-            }
-        );
+                where: { is_deleted: false },
+                attributes: userAttributes,
+            }]
+        }
+    );
     }
 
     const { count, rows: events } = await Event.findAndCountAll({
@@ -2601,77 +2454,6 @@ export const getAllEventsPaginated = async (
         limit: Number(limit),
         offset,
         distinct: true,
-    });
-
-    return {
-        data: events,
-        pagination: {
-            totalCount: count,
-            currentPage: Number(page),
-            totalPages: Math.ceil(count / Number(limit)),
-        },
-    };
-};
-
-/**
- * Get recommended events for a user.
- * Events that share at least one vibe with the user are listed first, then other events.
- * Simple filters: search + optional is_public flag, with pagination.
- */
-export const getRecommendedEventsPaginated = async (page = 1, limit = 10, search = ''): Promise<{
-    data: Event[];
-    pagination: {
-        totalCount: number;
-        currentPage: number;
-        totalPages: number;
-    };
-}> => {
-    const baseConditions = {
-        is_public: true,
-        is_deleted: false,
-        end_date: { [Op.gte]: new Date() },
-    };
-
-    const whereClause: any = search
-        ? {
-            [Op.and]: [
-                baseConditions,
-                {
-                    [Op.or]: [
-                        { title: { [Op.like]: `%${search}%` } },
-                        { description: { [Op.like]: `%${search}%` } },
-                        { address: { [Op.like]: `%${search}%` } },
-                    ],
-                },
-            ],
-        }
-        : baseConditions;
-
-    const offset = (page - 1) * limit;
-
-    const { count, rows: events } = await Event.findAndCountAll({
-        offset,
-        where: whereClause,
-        limit: Number(limit),
-        include: [
-            ...includeSettings,
-            {
-                model: EventParticipant,
-                attributes: eventParticipantAttributes,
-                as: 'participants',
-                required: false,
-                where: { is_deleted: false, role: EventParticipantRole.HOST },
-                include: [{
-                    model: User,
-                    as: 'user',
-                    required: false,
-                    where: { is_deleted: false },
-                    attributes: userAttributes,
-                }]
-            },
-        ],
-        attributes: eventAttributes,
-        order: [['start_date', 'ASC']],
     });
 
     return {
@@ -2817,6 +2599,7 @@ export const getTopCitiesWithEventCount = async (): Promise<Array<{ city: string
             [Sequelize.fn('COUNT', Sequelize.col('Event.id')), 'event_count']
         ],
         where: {
+            // is_public: true,
             is_deleted: false,
             city: { [Op.ne]: null },
             state: { [Op.ne]: null },

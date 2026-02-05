@@ -1,5 +1,7 @@
 import { sequelize } from '../server';
+import tagService from '../services/tag.service';
 import loggerService from '../utils/logger.service';
+import segmentService from '../services/segment.service';
 import { NextFunction, Request, Response } from 'express';
 import customerService from '../services/customer.service';
 import { responseMessages } from '../utils/response-message.service';
@@ -65,11 +67,15 @@ export const createCustomer = async (req: Request, res: Response, next: NextFunc
     const transaction = await sequelize.transaction();
     try {
         const userId = res.locals.auth?.user?.id;
-        const { tag_ids, segment_ids, ...data } = req.body;
+        const { tag_ids, segment_ids, is_all_tag, is_all_segment, ...data } = req.body;
 
         const customer = await customerService.createCustomer(data, userId, transaction);
-        if (tag_ids?.length) await customerService.setCustomerTags(customer.id, tag_ids, transaction);
-        if (segment_ids?.length) await customerService.setCustomerSegments(customer.id, segment_ids, transaction);
+
+        const finalTagIds = is_all_tag === true ? await tagService.getAssignableTagIdsForUser(userId) : (Array.isArray(tag_ids) ? tag_ids : []);
+        const finalSegmentIds = is_all_segment === true ? await segmentService.getSegmentIdsForUser(userId) : (Array.isArray(segment_ids) ? segment_ids : []);
+
+        if (finalTagIds.length) await customerService.setCustomerTags(customer.id, finalTagIds, userId, transaction);
+        if (finalSegmentIds.length) await customerService.setCustomerSegments(customer.id, finalSegmentIds, transaction);
         await transaction.commit();
         const created = await customerService.getCustomerById(customer.id, userId);
         return sendSuccessResponse(res, responseMessages.customer.created, withTagAndSegmentIds(created));
@@ -90,10 +96,18 @@ export const updateCustomer = async (req: Request, res: Response, next: NextFunc
             await transaction.rollback();
             return sendNotFoundResponse(res, responseMessages.customer.notFoundSingle);
         }
-        const { tag_ids, segment_ids, ...data } = req.body;
+        const { tag_ids, segment_ids, is_all_tag, is_all_segment, ...data } = req.body;
         if (Object.keys(data).length) await customerService.updateCustomer(req.params.id as string, data, userId, transaction);
-        if (tag_ids !== undefined) await customerService.setCustomerTags(req.params.id as string, Array.isArray(tag_ids) ? tag_ids : [], transaction);
-        if (segment_ids !== undefined) await customerService.setCustomerSegments(req.params.id as string, Array.isArray(segment_ids) ? segment_ids : [], transaction);
+
+        if (tag_ids !== undefined || is_all_tag !== undefined) {
+            const finalTagIds = is_all_tag === true ? await tagService.getAssignableTagIdsForUser(userId) : (Array.isArray(tag_ids) ? tag_ids : []);
+            await customerService.setCustomerTags(req.params.id as string, finalTagIds, userId, transaction);
+        }
+
+        if (segment_ids !== undefined || is_all_segment !== undefined) {
+            const finalSegmentIds = is_all_segment === true ? await segmentService.getSegmentIdsForUser(userId) : (Array.isArray(segment_ids) ? segment_ids : []);
+            await customerService.setCustomerSegments(req.params.id as string, finalSegmentIds, transaction);
+        }
         await transaction.commit();
         const updated = await customerService.getCustomerById(req.params.id as string, userId);
         return sendSuccessResponse(res, responseMessages.customer.updated, withTagAndSegmentIds(updated));

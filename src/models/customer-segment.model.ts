@@ -18,10 +18,14 @@ export class CustomerSegment extends Model {
                 customer_id: {
                     type: DataTypes.UUID,
                     allowNull: false,
+                    references: { model: 'customers', key: 'id' },
+                    onDelete: 'CASCADE',
                 },
                 segment_id: {
                     type: DataTypes.UUID,
                     allowNull: false,
+                    references: { model: 'segments', key: 'id' },
+                    onDelete: 'CASCADE',
                 },
             },
             {

@@ -18,10 +18,14 @@ export class CustomerTag extends Model {
                 customer_id: {
                     type: DataTypes.UUID,
                     allowNull: false,
+                    references: { model: 'customers', key: 'id' },
+                    onDelete: 'CASCADE',
                 },
                 tag_id: {
                     type: DataTypes.UUID,
                     allowNull: false,
+                    references: { model: 'tags', key: 'id' },
+                    onDelete: 'CASCADE',
                 },
             },
             {
