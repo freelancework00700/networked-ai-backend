@@ -222,12 +222,10 @@ const getAllTagsPaginated = async (
     const userTagIds = allUserTagRows.map((r) => r.id);
     const countByTagId = userTagIds.length ? await getTagCustomerCounts(userTagIds, userId) : {};
 
-    const allUserTags: TagWithMeta[] = allUserTagRows
-        .map((tag) => {
-            const tagData = tag.toJSON ? tag.toJSON() : (tag as any);
-            return { ...tagData, total_customer: countByTagId[tag.id] ?? 0, is_system: false };
-        })
-        .filter((t) => (t.total_customer ?? 0) > 0);
+    const allUserTags: TagWithMeta[] = allUserTagRows.map((tag) => {
+        const tagData = tag.toJSON ? tag.toJSON() : (tag as any);
+        return { ...tagData, total_customer: countByTagId[tag.id] ?? 0, is_system: false };
+    });
 
     const combined = [...systemTags, ...allUserTags];
     const totalCount = combined.length;

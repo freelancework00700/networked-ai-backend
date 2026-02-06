@@ -5,7 +5,7 @@
   "main": "src/server.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node src/server.ts",
+    "start": "npm run build && node dist/server.js",
     "dev": "nodemon src/server.ts",
     "build": "rimraf dist && tsc && npm run copy-content",
     "copy-content": "copyfiles -u 1 \"src/contents/**/*\" dist && copyfiles -u 1 \"src/assets/**/*\" dist"
