@@ -10,7 +10,7 @@ import { sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } fr
 export const sendSms = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const userId = res.locals.auth?.user?.id;
-        const { type, message, to, is_all_tag, is_all_segment, tag_ids, segment_ids } = req.body;
+        const { type, message, to, is_all_tag, is_all_segment, tag_ids, segment_ids, title } = req.body;
 
         const finalTagIds = is_all_tag === true ? await tagService.getAssignableTagIdsForUser(userId) : (Array.isArray(tag_ids) ? tag_ids : []);
         const finalSegmentIds = is_all_segment === true ? await segmentService.getSegmentIdsForUser(userId) : (Array.isArray(segment_ids) ? segment_ids : []);
@@ -20,6 +20,7 @@ export const sendSms = async (req: Request, res: Response, next: NextFunction) =
                 to,
                 type,
                 message,
+                title: title || null,
                 tag_ids: finalTagIds,
                 segment_ids: finalSegmentIds,
             },

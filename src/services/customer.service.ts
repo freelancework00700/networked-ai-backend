@@ -1,5 +1,5 @@
 import tagService from './tag.service';
-import { Op, Transaction, IncludeOptions } from 'sequelize';
+import { Op, Transaction, literal } from 'sequelize';
 import { isNetworkTagForUser } from '../utils/tag.constants';
 import { Customer, CustomerTag, CustomerSegment, Tag, Segment } from '../models/index';
 
@@ -31,50 +31,85 @@ type PaginatedOptions = {
     order_direction?: 'ASC' | 'DESC';
 };
 
-const getCustomerIncludes = (tag_ids?: string[], segment_ids?: string[]): IncludeOptions[] => {
-    const hasTagFilter = !!(tag_ids && tag_ids.length > 0);
-    const hasSegmentFilter = !!(segment_ids && segment_ids.length > 0);
-  
-    return [
-      {
+/**
+ * Adds tag and segment filtering to a Sequelize where clause using subqueries
+ * @param whereClause - The existing where clause to modify
+ * @param tag_ids - Optional array of tag IDs to filter by
+ * @param segment_ids - Optional array of segment IDs to filter by
+ */
+const addTagAndSegmentFilters = (
+    whereClause: any,
+    tag_ids?: string[],
+    segment_ids?: string[]
+): void => {
+    // Add tag filtering using subquery
+    if (tag_ids && tag_ids.length > 0) {
+        whereClause[Op.and] = whereClause[Op.and] || [];
+        whereClause[Op.and].push({
+            id: {
+                [Op.in]: literal(`
+                    (SELECT DISTINCT customer_id 
+                     FROM customer_tags ct 
+                     INNER JOIN tags t ON ct.tag_id = t.id 
+                     WHERE ct.customer_id = Customer.id 
+                     AND t.id IN ('${tag_ids.join("','")}')
+                     AND t.is_deleted = false)
+                `)
+            }
+        });
+    }
+
+    // Add segment filtering using subquery
+    if (segment_ids && segment_ids.length > 0) {
+        whereClause[Op.and] = whereClause[Op.and] || [];
+        whereClause[Op.and].push({
+            id: {
+                [Op.in]: literal(`
+                    (SELECT DISTINCT customer_id 
+                     FROM customer_segments cs 
+                     INNER JOIN segments s ON cs.segment_id = s.id 
+                     WHERE cs.customer_id = Customer.id 
+                     AND s.id IN ('${segment_ids.join("','")}')
+                     AND s.is_deleted = false)
+                `)
+            }
+        });
+    }
+};
+
+/**
+ * Standard include options for customer queries with tags and segments
+ * @returns IncludeOptions array for tags and segments
+ */
+const getCustomerIncludeOptions = () => [
+    {
         model: Tag,
         as: "tags",
-        required: hasTagFilter,
-        where: hasTagFilter
-          ? {
-              is_deleted: false,
-              id: { [Op.in]: tag_ids },
-            }
-          : { is_deleted: false },
+        required: false,
         through: { attributes: [] },
         attributes: ['id', 'name'],
-      },
-      {
+        where: { is_deleted: false }
+    },
+    {
         model: Segment,
-        as: "segments",
-        required: hasSegmentFilter,
-        where: hasSegmentFilter
-          ? {
-              is_deleted: false,
-              id: { [Op.in]: segment_ids },
-            }
-          : { is_deleted: false },
+        as: "segments", 
+        required: false,
         through: { attributes: [] },
         attributes: ['id', 'name'],
-      },
-    ];
-};
+        where: { is_deleted: false }
+    },
+];
 
 const getAllCustomersPaginated = async (
     userId: string,
     options: PaginatedOptions = {}
 ): Promise<{ data: Customer[]; pagination: { totalCount: number; currentPage: number; totalPages: number } }> => {
     const {
-        tag_ids,
-        page = 1,
-        limit = 10,
-        segment_ids,
-        search = '',
+        tag_ids, 
+        page = 1, 
+        limit = 10, 
+        segment_ids, 
+        search = '', 
         order_by = 'created_at',
         order_direction = 'DESC',
     } = options;
@@ -89,6 +124,11 @@ const getAllCustomersPaginated = async (
         ];
     }
 
+    const includeDetails = getCustomerIncludeOptions();
+
+    // Add tag and segment filtering using global method
+    addTagAndSegmentFilters(whereClause, tag_ids, segment_ids);
+
     const validOrderColumns = ['name', 'email', 'mobile', 'created_at', 'updated_at'];
     const orderColumn = validOrderColumns.includes(order_by) ? order_by : 'name';
 
@@ -99,7 +139,7 @@ const getAllCustomersPaginated = async (
         limit: Number(limit),
         attributes: customerAttributes,
         order: [[orderColumn, order_direction]],
-        include: getCustomerIncludes(tag_ids, segment_ids),
+        include: includeDetails,
     });
 
     return {
@@ -116,7 +156,7 @@ const getCustomerById = async (id: string, userId: string, transaction?: Transac
     return Customer.findOne({
         transaction,
         attributes: customerAttributes,
-        include: getCustomerIncludes([], []),
+        include: getCustomerIncludeOptions(),
         where: { id, is_deleted: false, created_by: userId },
     });
 };
@@ -290,6 +330,39 @@ const getDistinctMobilesByTagsAndSegments = async (
     return [...new Set([...customerMobiles, ...systemMobiles])];
 };
 
+const checkDuplicateCustomer = async (email: string | null, mobile: string | null, userId: string, excludeCustomerId?: string, transaction?: Transaction): Promise<boolean> => {
+    const whereClause: any = { 
+        is_deleted: false, 
+        created_by: userId,
+        [Op.or]: []
+    };
+
+    if (email) {
+        whereClause[Op.or].push({ email: { [Op.eq]: email } });
+    }
+    
+    if (mobile) {
+        whereClause[Op.or].push({ mobile: { [Op.eq]: mobile } });
+    }
+
+    if (whereClause[Op.or].length === 0) {
+        return false;
+    }
+
+    // Exclude current customer from duplicate check
+    if (excludeCustomerId) {
+        whereClause.id = { [Op.ne]: excludeCustomerId };
+    }
+
+    const existingCustomer = await Customer.findOne({
+        where: whereClause,
+        transaction,
+        attributes: ['id']
+    });
+
+    return !!existingCustomer;
+};
+
 export default {
     createCustomer,
     updateCustomer,
@@ -297,6 +370,7 @@ export default {
     getCustomerById,
     setCustomerTags,
     setCustomerSegments,
+    checkDuplicateCustomer,
     getAllCustomersPaginated,
     getDistinctEmailsByTagsAndSegments,
     getDistinctMobilesByTagsAndSegments,

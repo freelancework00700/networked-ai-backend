@@ -6,7 +6,7 @@ import { SmsType, ReminderType } from '../types/enums';
 import { Event, Sms, User, EventParticipant, EventAttendee, Feed } from "../models";
 import { CreateSmsParams, GetAllSmsOptions, SendSmsByTagsAndSegmentsParams } from '../types/sms.interface';
 
-const smsAttributes = ['id', 'type', 'message', 'from', 'to', 'created_at', 'updated_at', 'created_by', 'updated_by'];
+const smsAttributes = ['id', 'type', 'title', 'message', 'from', 'to', 'created_at', 'updated_at', 'created_by', 'updated_by'];
 
 /**
  * Create SMS record in database
@@ -21,6 +21,7 @@ const createSms = async (params: CreateSmsParams, transaction?: Transaction): Pr
                 to: params.to,
                 type: params.type,
                 message: params.message,
+                title: params.title || null,
                 from: env.TWILIO_PHONE_NUMBER,
                 created_by: params.created_by || null,
             },
@@ -634,6 +635,7 @@ export const sendSmsByTagsAndSegments = async (
             type: params.type,
             created_by: userId,
             message: params.message,
+            title: params.title || null,
         },
         transaction
     );

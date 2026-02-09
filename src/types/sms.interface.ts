@@ -2,6 +2,7 @@ export interface CreateSmsParams {
     to: string[];
     type: string;
     message: string;
+    title?: string | null;
     created_by?: string | null;
 }
 
@@ -9,6 +10,7 @@ export interface SendSmsByTagsAndSegmentsParams {
     type: string;
     to?: string[];
     message: string;
+    title?: string | null;
     tag_ids?: string[];
     segment_ids?: string[];
 }

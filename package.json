@@ -19,6 +19,7 @@
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-ses": "^3.787.0",
+    "@types/xlsx": "^0.0.35",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "amqplib": "^0.10.8",
@@ -47,7 +48,8 @@
     "twilio": "^5.10.7",
     "uuid": "^8.3.2",
     "winston": "^3.18.3",
-    "winston-daily-rotate-file": "^5.0.0"
+    "winston-daily-rotate-file": "^5.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/amqplib": "^0.10.7",

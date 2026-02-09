@@ -10,6 +10,7 @@ export class Sms extends Model {
     public type!: SmsType;
     public message!: string;
     public from!: string;
+    public title!: string | null;
     
     public created_by!: string | null;
     public updated_by!: string | null;
@@ -41,6 +42,10 @@ export class Sms extends Model {
                 from: {
                     type: DataTypes.STRING(500),
                     allowNull: false,
+                },
+                title: {
+                    type: DataTypes.STRING(255),
+                    allowNull: true,
                 },
                 created_by: {
                     type: DataTypes.UUID,

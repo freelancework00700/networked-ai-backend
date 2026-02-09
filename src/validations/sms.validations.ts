@@ -3,6 +3,7 @@ import { SmsType } from '../types/enums';
 export const sendSmsSchema = {
     type: 'object',
     properties: {
+        title: { type: 'string' },
         is_all_tag: { type: 'boolean' },
         is_all_segment: { type: 'boolean' },
         message: { type: 'string', minLength: 1 },

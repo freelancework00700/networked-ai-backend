@@ -227,7 +227,7 @@ const getAllTagsPaginated = async (
         return { ...tagData, total_customer: countByTagId[tag.id] ?? 0, is_system: false };
     });
 
-    const combined = [...systemTags, ...allUserTags];
+    const combined = [...allUserTags, ...systemTags];
     const totalCount = combined.length;
     const start = (pageNum - 1) * limitNum;
     const data = combined.slice(start, start + limitNum);

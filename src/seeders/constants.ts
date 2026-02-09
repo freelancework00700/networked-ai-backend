@@ -1113,7 +1113,7 @@ export const DEFAULT_GAMIFICATION_BADGES = [
         badge: "Silver",
         title:"Master Organizer",
         priority: 9,
-        locked_url: `${env.API_URL}/media/Badge/2k-locked.svg`,
+        locked_url: `${env.API_URL}/media/Badge/5k-locked.svg`,
         event_hosted_url: `${env.API_URL}/media/Badge/5k-event-hosted.svg`,
         event_attended_url: `${env.API_URL}/media/Badge/5k-event-attended.svg`,
         networks_url: `${env.API_URL}/media/Badge/5k-networks.svg`,

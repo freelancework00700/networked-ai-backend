@@ -51,3 +51,15 @@ export const getAllCustomersSchema = {
     },
     additionalProperties: false,
 };
+
+export const uploadCustomersFromExcelSchema = {
+    type: 'object',
+    properties: {
+        tag_ids: { type: 'string' },
+        segment_ids: { type: 'string' },
+        is_all_tag: { type: 'string', enum: ['true', 'false'] },
+        is_all_segment: { type: 'string', enum: ['true', 'false'] },
+    },
+    required: [],
+    additionalProperties: false,
+};
