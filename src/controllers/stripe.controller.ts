@@ -291,8 +291,8 @@ const handleAccountUpdated = async (account: Stripe.Account, transaction: any) =
 const handlePlatformSubscriptionPaymentSucceeded = async (subscription: Stripe.Subscription, invoice: Stripe.Invoice, transaction: any) => {
     try {
         const stripeSubscriptionId = subscription.id;
-        const periodEnd = new Date(invoice.period_end * 1000);
-        const periodStart = new Date(invoice.period_start * 1000);
+        const periodEnd = new Date(invoice.lines.data[0].period.end * 1000);
+        const periodStart = new Date(invoice.lines.data[0].period.start * 1000);
 
         loggerService.info(`Platform Subscription: ${JSON.stringify(subscription)}`);
 
@@ -354,8 +354,8 @@ const handlePlatformSubscriptionPaymentSucceeded = async (subscription: Stripe.S
 const handleInvoicePaymentSucceeded = async (invoice: Stripe.Invoice, transaction: any) => {
     try {
         // Check if this invoice is for a subscription
-        const periodEnd = new Date(invoice.period_end * 1000);
-        const periodStart = new Date(invoice.period_start * 1000);
+        const periodEnd = new Date(invoice.lines.data[0].period.end * 1000);
+        const periodStart = new Date(invoice.lines.data[0].period.start * 1000);
         const stripeSubscriptionId = invoice.lines.data[0].subscription as string;
 
         if (!stripeSubscriptionId || typeof stripeSubscriptionId !== 'string') {
