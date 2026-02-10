@@ -119,6 +119,14 @@ const getPlatformSubscriptionByStripeId = async (stripeSubscriptionId: string, t
     });
 };
 
+// Get platform subscription by subscription ID
+const getPlatformSubscriptionById = async (subscriptionId: string, transaction?: any): Promise<PlatformUserSubscription | null> => {
+    return await PlatformUserSubscription.findOne({
+        transaction: transaction,
+        where: { id: subscriptionId },
+    });
+};
+
 // Update platform subscription by Stripe subscription ID
 const updatePlatformSubscriptionByStripeId = async (stripeSubscriptionId: string, updateData: any, transaction?: any): Promise<PlatformUserSubscription> => {
     const subscription = await PlatformUserSubscription.findOne({
@@ -231,6 +239,7 @@ const cancelPlatformSubscription = async (userId: string, subscriptionId: string
 export default {
     cancelPlatformSubscription,
     createPlatformSubscription,
+    getPlatformSubscriptionById,
     getPlatformSubscriptionByStripeId,
     createFreeSubscriptionsForAllUsers,
     updatePlatformSubscriptionByStripeId,

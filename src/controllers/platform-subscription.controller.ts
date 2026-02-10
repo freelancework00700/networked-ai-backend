@@ -33,7 +33,7 @@ export const cancelPlatformSubscription = async (req: Request, res: Response, ne
         if (!subscription_id) return sendBadRequestResponse(res, responseMessages.subscription.subscriptionIdRequired);
 
         // Find subscription by database ID
-        const dbSubscription = await platformSubscriptionService.getPlatformSubscriptionByStripeId(subscription_id);
+        const dbSubscription = await platformSubscriptionService.getPlatformSubscriptionById(subscription_id);
         if (!dbSubscription) return sendNotFoundResponse(res, responseMessages.subscription.subscriptionNotFound);
 
         // Permission check: only subscriber can cancel platform subscriptions

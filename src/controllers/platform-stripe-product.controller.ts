@@ -21,7 +21,7 @@ export const getPlatformProductById = async (req: Request, res: Response, next: 
         const user = res.locals.auth?.user;
         if (!id) return sendBadRequestResponse(res, responseMessages.subscription.productIdRequired);
 
-        const product = await platformStripeProductService.getPlatformProductById(id, user?.id);
+        const product = await platformStripeProductService.getPlatformProductById(id as string, user?.id);
         if (!product) return sendNotFoundResponse(res, responseMessages.subscription.productNotFound);
 
         return sendSuccessResponse(res, responseMessages.subscription.productRetrieved, product);
