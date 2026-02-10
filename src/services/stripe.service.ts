@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import stripe from '../utils/stripe';
+import env from '../utils/validate-env';
 import loggerService from '../utils/logger.service';
 import stripePriceService from './stripe-price.service';
 import { StripeAccountStatus, StripePriceInterval, SubscriptionStatus } from '../types/enums';
@@ -363,7 +364,39 @@ const createSubscriptionPaymentIntent = async (
       loggerService.error(`Error creating subscription payment intent: ${err.message}`);
       return null;
     }
-  };
+};
+
+const createSubscriptionCheckout = async (
+    userId: string,
+    dbPriceId: string,
+    customerId: string, 
+    stripePriceId: string,
+): Promise<{ url: string | null } | null> => {
+  try {
+    const metadata = {
+        user_id: userId,
+        price_id: dbPriceId,
+        is_platform: 'true'
+    };
+
+    const { url } = await stripe.checkout.sessions.create({
+      metadata,
+      mode: "subscription",
+      customer: customerId,
+      client_reference_id: userId,
+      allow_promotion_codes: false,
+      subscription_data: { metadata },
+      cancel_url: `${env.ADMIN_URL}/plans`,
+      success_url: `${env.ADMIN_URL}/plans`,
+      line_items: [{ price: stripePriceId, quantity: 1 }],
+    });
+
+    return { url };
+  } catch (err: any) {
+    loggerService.error(`Error creating subscription checkout: ${err.message}`);
+    return null;
+  }
+};
 
 export default {
     listStripePrices,
@@ -382,6 +415,7 @@ export default {
     lookupOrCreateCustomer,
     createDashboardLoginLink,
     cancelStripeSubscription,
+    createSubscriptionCheckout,
     findPriceAndGetStripeAccountId,
     createSubscriptionPaymentIntent,
 };

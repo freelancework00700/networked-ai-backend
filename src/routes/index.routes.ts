@@ -36,6 +36,8 @@ import tagRouter from './tag.routes';
 import emailRouter from './email.routes';
 import segmentRouter from './segment.routes';
 import customerRouter from './customer.routes';
+import platformSubscriptionRouter from './platform-subscription.routes';
+import platformStripeProductRouter from './platform-stripe-product.routes';
 
 const indexRouter = Router();
 
@@ -76,4 +78,6 @@ indexRouter.use('/tags', tagRouter);
 indexRouter.use('/emails', emailRouter);
 indexRouter.use('/segments', segmentRouter);
 indexRouter.use('/customers', customerRouter);
+indexRouter.use('/platform/subscription', platformSubscriptionRouter);
+indexRouter.use('/platform/subscription/plan', platformStripeProductRouter);
 export default indexRouter;

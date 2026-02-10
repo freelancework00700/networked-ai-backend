@@ -63,6 +63,11 @@ import Segment from './segment.model';
 import Customer from './customer.model';
 import CustomerTag from './customer-tag.model';
 import CustomerSegment from './customer-segment.model';
+import PlatformStripePrice from './platform-stripe-price.model';
+import PlatformStripeProduct from './platform-stripe-product.model';
+import PlatformUserSubscription from './platform-user-subscription.model';
+import PlatformUserFeatureUsage from './platform-user-feature-usage.model';
+import PlatformStripeProductFeature from './platform-stripe-product-feature.model';
 
 /**
  * Initialize all MySQL models, associations, and hooks
@@ -134,6 +139,11 @@ export const initMySQLModels = (connection: Sequelize): void => {
     Customer.initModel(connection);
     CustomerTag.initModel(connection);
     CustomerSegment.initModel(connection);
+    PlatformStripePrice.initModel(connection);
+    PlatformStripeProduct.initModel(connection);
+    PlatformUserSubscription.initModel(connection);
+    PlatformUserFeatureUsage.initModel(connection);
+    PlatformStripeProductFeature.initModel(connection);
 
     // Init associations here
     User.initAssociations();
@@ -200,6 +210,11 @@ export const initMySQLModels = (connection: Sequelize): void => {
     Customer.initAssociations();
     CustomerTag.initAssociations();
     CustomerSegment.initAssociations();
+    PlatformStripePrice.initAssociations();
+    PlatformStripeProduct.initAssociations();
+    PlatformUserFeatureUsage.initAssociations();
+    PlatformUserSubscription.initAssociations();
+    PlatformStripeProductFeature.initAssociations();
 
     // Init hooks here
     User.initHooks();
@@ -266,6 +281,11 @@ export const initMySQLModels = (connection: Sequelize): void => {
     Customer.initHooks();
     CustomerTag.initHooks();
     CustomerSegment.initHooks();
+    PlatformStripePrice.initHooks();
+    PlatformStripeProduct.initHooks();
+    PlatformUserSubscription.initHooks();
+    PlatformUserFeatureUsage.initHooks();
+    PlatformStripeProductFeature.initHooks();
 
 };
 
@@ -294,6 +314,11 @@ export {
     GamificationBadge, GamificationDiamond, GamificationCategory, UserGamificationPointsLog, UserGamificationCategoryBadges,
     StripeProduct, StripePrice, StripeProductEvent, Subscription, Transaction,
     ChatRoom, ChatMessage, Email, Sms, Notification, EventReminder,
-    Tag, Segment, Customer, CustomerTag, CustomerSegment
+    Tag, Segment, Customer, CustomerTag, CustomerSegment,
+    PlatformStripePrice,
+    PlatformStripeProduct,
+    PlatformUserFeatureUsage,
+    PlatformUserSubscription,
+    PlatformStripeProductFeature,
 };
 

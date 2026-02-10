@@ -7,6 +7,7 @@ const env = cleanEnv(process.env, {
 
     API_URL: str(),
     FRONT_URL: str(),
+    ADMIN_URL: str(),
 
     // Database Configuration
     MYSQL_USER: str(),

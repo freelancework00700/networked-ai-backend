@@ -6,6 +6,7 @@ export enum StatusCode {
     BAD_REQUEST = 400,
     UNAUTHORIZED = 401,
     INTERNAL_ERROR = 500,
+    SMS_LIMIT_EXCEEDED = 422,
 };
 
 export enum AccountType {
@@ -241,4 +242,14 @@ export enum ReminderType {
     TWO_HOURS = '2h',
     TWENTY_FOUR_HOURS = '24h',
     POST_EVENT = 'PostEvent'
+}
+
+export enum PlatformProductPriority {
+    FREE = 1,
+    GROWTH = 2,
+    ENTERPRISE = 3
+}
+
+export enum FeatureKey {
+    SMS = 'sms',
 }

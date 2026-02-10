@@ -1,3 +1,4 @@
+import { StatusCode } from '../types/enums';
 import tagService from '../services/tag.service';
 import loggerService from '../utils/logger.service';
 import smsService from '../services/sms.service';
@@ -27,9 +28,20 @@ export const sendSms = async (req: Request, res: Response, next: NextFunction) =
             userId
         );
         return sendSuccessResponse(res, responseMessages.sms.sent);
-    } catch (error) {
+    } catch (error: any) {
         loggerService.error(`Error sending SMS: ${error}`);
-        sendServerErrorResponse(res, responseMessages.sms.failedToSend, error);
+        
+        // Handle SMS limit exceeded error with specific status code
+        if (error.statusCode === StatusCode.SMS_LIMIT_EXCEEDED) {
+            const resObject = {
+                data: error,
+                success: false,
+                message: responseMessages.sms.limitExceeded,
+            };
+            return res.status(StatusCode.SMS_LIMIT_EXCEEDED).json(resObject);
+        }
+        
+        sendServerErrorResponse(res, error.message, error);
         next(error);
     }
 };

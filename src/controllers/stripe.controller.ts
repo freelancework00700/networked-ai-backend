@@ -11,6 +11,8 @@ import subscriptionService from '../services/subscription.service';
 import { responseMessages } from '../utils/response-message.service';
 import stripeProductService from '../services/stripe-product.service';
 import { User, Subscription, Event, EventAttendee } from '../models/index';
+import platformSubscriptionService from '../services/platform-subscription.service';
+import platformStripeProductService from '../services/platform-stripe-product.service';
 import stripeService, { getAccountStatus, getSubscriptionStatus } from '../services/stripe.service';
 import { StripeAccountStatus, SubscriptionStatus, TransactionStatus, TransactionType } from '../types/enums';
 import { sendBadRequestResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } from '../utils/response.service';
@@ -285,6 +287,69 @@ const handleAccountUpdated = async (account: Stripe.Account, transaction: any) =
     }
 };
 
+// Handle platform subscription payment succeeded webhook event
+const handlePlatformSubscriptionPaymentSucceeded = async (subscription: Stripe.Subscription, invoice: Stripe.Invoice, transaction: any) => {
+    try {
+        const stripeSubscriptionId = subscription.id;
+        const periodEnd = new Date(invoice.period_end * 1000);
+        const periodStart = new Date(invoice.period_start * 1000);
+
+        loggerService.info(`Platform Subscription: ${JSON.stringify(subscription)}`);
+
+        // Get metadata from subscription (includes price_id, user_id)
+        const dbUserId = subscription.metadata?.user_id;
+        const dbPriceId = subscription.metadata?.price_id;
+
+        if (!dbUserId || !dbPriceId) {
+            loggerService.error(`Missing metadata in platform subscription ${stripeSubscriptionId}: user_id or price_id`);
+            return;
+        }
+
+        // Check if this is a platform subscription by checking if price_id exists in platform_stripe_prices
+        const platformPrice = await platformStripeProductService.getPlatformStripePriceWithProduct(dbPriceId);
+        if (!platformPrice) {
+            loggerService.info(`Price ${dbPriceId} is not a platform price, skipping platform subscription creation`);
+            return;
+        }
+
+        // Check if platform subscription already exists
+        const existingPlatformSubscription = await platformSubscriptionService.getPlatformSubscriptionByStripeId(stripeSubscriptionId, transaction);
+        if (existingPlatformSubscription) {
+            loggerService.info(`Platform subscription ${stripeSubscriptionId} already exists in database`);
+            // Update subscription dates if needed
+            await platformSubscriptionService.updatePlatformSubscriptionByStripeId(
+                stripeSubscriptionId,
+                {
+                    end_date: periodEnd,
+                    start_date: periodStart,
+                    status: getSubscriptionStatus(subscription),
+                },
+                transaction
+            );
+            return;
+        }
+
+        // Create platform subscription record
+        await platformSubscriptionService.createPlatformSubscriptionFromWebhook(
+            {
+                user_id: dbUserId,
+                end_date: periodEnd,
+                created_by: dbUserId,
+                start_date: periodStart,
+                platform_stripe_price_id: dbPriceId,
+                status: getSubscriptionStatus(subscription),
+                stripe_subscription_id: stripeSubscriptionId,
+            },
+            transaction
+        );
+
+        loggerService.info(`Platform subscription ${stripeSubscriptionId} created successfully for user ${dbUserId}`);
+    } catch (error: any) {
+        loggerService.error(`Error handling platform subscription payment succeeded: ${error.message}`);
+        throw error;
+    }
+};
+
 // Handle invoice.payment_succeeded webhook event
 const handleInvoicePaymentSucceeded = async (invoice: Stripe.Invoice, transaction: any) => {
     try {
@@ -301,6 +366,13 @@ const handleInvoicePaymentSucceeded = async (invoice: Stripe.Invoice, transactio
         // Retrieve full subscription object from Stripe to get metadata
         const subscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
         loggerService.info(`Subscription: ${JSON.stringify(subscription)}`);
+
+        // Check if this is a platform subscription
+        const isPlatform = subscription.metadata?.is_platform === 'true';
+        if (isPlatform) {
+            await handlePlatformSubscriptionPaymentSucceeded(subscription, invoice, transaction);
+            return;
+        }
 
         // Get metadata from subscription (includes product_id, price_id, user_id, owner_id)
         const dbUserId = subscription.metadata?.user_id;
@@ -480,10 +552,60 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent,
     }
 };
 
+// Handle platform subscription updated webhook event
+const handlePlatformSubscriptionUpdated = async (subscription: Stripe.Subscription, transaction: any) => {
+    try {
+        const stripeSubscriptionId = subscription.id;
+        const subscriptionObj = subscription as any;
+        const currentPeriodEnd = subscriptionObj.current_period_end;
+        const currentPeriodStart = subscriptionObj.current_period_start;
+
+        // Check if this is a platform subscription
+        const existingPlatformSubscription = await platformSubscriptionService.getPlatformSubscriptionByStripeId(stripeSubscriptionId, transaction);
+        if (!existingPlatformSubscription) {
+            loggerService.info(`Platform subscription ${stripeSubscriptionId} not found in database, skipping update`);
+            return;
+        }
+
+        // Update platform subscription
+        const updateData: any = {
+            status: getSubscriptionStatus(subscription),
+            cancel_at_end_date: subscription.cancel_at_period_end || false,
+            canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
+        };
+
+        if (currentPeriodStart) {
+            updateData.start_date = new Date(currentPeriodStart * 1000);
+        }
+
+        if (currentPeriodEnd) {
+            updateData.end_date = new Date(currentPeriodEnd * 1000);
+        }
+
+        await platformSubscriptionService.updatePlatformSubscriptionByStripeId(
+            stripeSubscriptionId,
+            updateData,
+            transaction
+        );
+
+        loggerService.info(`Platform subscription ${stripeSubscriptionId} updated successfully`);
+    } catch (error: any) {
+        loggerService.error(`Error handling platform subscription updated: ${error.message}`);
+        throw error;
+    }
+};
+
 // Handle customer.subscription.updated webhook event
 const handleSubscriptionUpdated = async (subscription: Stripe.Subscription, transaction: any) => {
     try {
         const stripeSubscriptionId = subscription.id;
+
+        // Check if this is a platform subscription
+        const isPlatform = subscription.metadata?.is_platform === 'true';
+        if (isPlatform) {
+            await handlePlatformSubscriptionUpdated(subscription, transaction);
+            return;
+        }
 
         // Check if subscription exists in database
         const existingSubscription = await subscriptionService.getSubscriptionByStripeId(stripeSubscriptionId, transaction);
@@ -530,6 +652,13 @@ const handleSubscriptionDeleted = async (subscription: Stripe.Subscription, tran
     try {
         const stripeSubscriptionId = subscription.id;
 
+        // Check if this is a platform subscription
+        const isPlatform = subscription.metadata?.is_platform === 'true';
+        if (isPlatform) {
+            await handlePlatformSubscriptionDeleted(subscription, transaction);
+            return;
+        }
+
         // Check if subscription exists in database
         const existingSubscription = await subscriptionService.getSubscriptionByStripeId(stripeSubscriptionId, transaction);
         
@@ -552,6 +681,35 @@ const handleSubscriptionDeleted = async (subscription: Stripe.Subscription, tran
         loggerService.info(`Subscription ${stripeSubscriptionId} marked as canceled`);
     } catch (error: any) {
         loggerService.error(`Error handling subscription deleted: ${error.message}`);
+        throw error;
+    }
+};
+
+// Handle platform subscription deleted webhook event
+const handlePlatformSubscriptionDeleted = async (subscription: Stripe.Subscription, transaction: any) => {
+    try {
+        const stripeSubscriptionId = subscription.id;
+
+        // Check if this is a platform subscription
+        const existingPlatformSubscription = await platformSubscriptionService.getPlatformSubscriptionByStripeId(stripeSubscriptionId, transaction);
+        if (!existingPlatformSubscription) {
+            loggerService.info(`Platform subscription ${stripeSubscriptionId} not found in database, skipping deletion`);
+            return;
+        }
+
+        // Update platform subscription status to canceled
+        await platformSubscriptionService.updatePlatformSubscriptionByStripeId(
+            stripeSubscriptionId,
+            {
+                canceled_at: new Date(),
+                status: SubscriptionStatus.CANCELED,
+            },
+            transaction
+        );
+
+        loggerService.info(`Platform subscription ${stripeSubscriptionId} canceled successfully`);
+    } catch (error: any) {
+        loggerService.error(`Error handling platform subscription deleted: ${error.message}`);
         throw error;
     }
 };

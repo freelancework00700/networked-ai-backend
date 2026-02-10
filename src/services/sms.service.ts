@@ -2,11 +2,140 @@ import env from '../utils/validate-env';
 import { Op, Transaction } from 'sequelize';
 import customerService from './customer.service';
 import loggerService from '../utils/logger.service';
-import { SmsType, ReminderType } from '../types/enums';
-import { Event, Sms, User, EventParticipant, EventAttendee, Feed } from "../models";
+import { responseMessages } from '../utils/response-message.service';
+import { SmsType, ReminderType, FeatureKey, StatusCode, SubscriptionStatus } from '../types/enums';
 import { CreateSmsParams, GetAllSmsOptions, SendSmsByTagsAndSegmentsParams } from '../types/sms.interface';
+import { Event, Sms, User, EventParticipant, EventAttendee, Feed, PlatformUserSubscription, PlatformUserFeatureUsage } from "../models";
 
 const smsAttributes = ['id', 'type', 'title', 'message', 'from', 'to', 'created_at', 'updated_at', 'created_by', 'updated_by'];
+
+/**
+ * Check if user has SMS limit available in their subscription
+ * @param userId - User ID to check
+ * @param smsCount - Number of SMS messages to be sent
+ * @param transaction - Optional database transaction
+ * @returns True if user has sufficient SMS limit, throws error if not
+ */
+const checkSmsLimit = async (userId: string, smsCount: number = 1, transaction?: Transaction): Promise<boolean> => {
+    try {
+        // Get ALL user's active subscriptions with SMS feature usage
+        const subscriptions = await PlatformUserSubscription.findAll({
+            where: {
+                user_id: userId,
+                status: SubscriptionStatus.ACTIVE,
+            },
+            include: [
+                {
+                    required: true,
+                    as: 'feature_usage',
+                    model: PlatformUserFeatureUsage,
+                    where: {
+                        feature_key: FeatureKey.SMS,
+                    },
+                },
+            ],
+            transaction,
+        });
+
+        if (!subscriptions || subscriptions.length === 0) {
+            throw new Error('No active subscription found or SMS feature not available');
+        }
+
+        // Calculate total limit and current usage across all subscriptions
+        let totalLimit = 0;
+        let totalUsed = 0;
+
+        for (const subscription of subscriptions) {
+            const smsUsage = (subscription as any).feature_usage?.[0];
+            if (smsUsage) {
+                totalLimit += smsUsage.limit_value || 0;
+                totalUsed += smsUsage.used_value || 0;
+            }
+        }
+
+        // Check if adding new SMS messages would exceed the total limit
+        if (totalUsed + smsCount > totalLimit) {
+            const error = new Error(responseMessages.sms.limitExceeded);
+            (error as any).statusCode = StatusCode.SMS_LIMIT_EXCEEDED;
+            throw error;
+        }
+
+        loggerService.info(`SMS limit check passed for user ${userId}: ${totalUsed}/${totalLimit} (+${smsCount})`);
+        return true;
+    } catch (error: any) {
+        loggerService.error(`Error checking SMS limit for user ${userId}: ${error.message}`);
+        throw error;
+    }
+};
+
+/**
+ * Update SMS usage count after successful SMS creation
+ * Distributes usage across subscriptions proportionally or fills up available capacity
+ * @param userId - User ID
+ * @param smsCount - Number of SMS messages sent
+ * @param transaction - Optional database transaction
+ */
+const updateSmsUsage = async (userId: string, smsCount: number = 1, transaction?: Transaction): Promise<void> => {
+    try {
+        // Get ALL user's active subscriptions with SMS feature usage
+        const subscriptions = await PlatformUserSubscription.findAll({
+            where: {
+                user_id: userId,
+                status: SubscriptionStatus.ACTIVE,
+            },
+            include: [
+                {
+                    required: true,
+                    as: 'feature_usage',
+                    model: PlatformUserFeatureUsage,
+                    where: {
+                        feature_key: FeatureKey.SMS,
+                    },
+                },
+            ],
+            transaction,
+        });
+
+        if (!subscriptions || subscriptions.length === 0) {
+            loggerService.warn(`No active subscriptions found for user ${userId}`);
+            return;
+        }
+
+        let remainingSmsCount = smsCount;
+
+        // Distribute SMS usage across subscriptions
+        for (const subscription of subscriptions) {
+            if (remainingSmsCount <= 0) break;
+
+            const smsUsage = (subscription as any).feature_usage?.[0];
+            if (!smsUsage) continue;
+
+            const currentUsage = smsUsage.used_value || 0;
+            const limitValue = smsUsage.limit_value || 0;
+            const availableCapacity = limitValue - currentUsage;
+
+            if (availableCapacity > 0) {
+                const smsToAdd = Math.min(remainingSmsCount, availableCapacity);
+                
+                await smsUsage.update({
+                    used_value: currentUsage + smsToAdd,
+                }, { transaction });
+
+                remainingSmsCount -= smsToAdd;
+                loggerService.info(`Updated SMS usage for subscription ${subscription.id}: +${smsToAdd} (new total: ${currentUsage + smsToAdd}/${limitValue})`);
+            }
+        }
+
+        if (remainingSmsCount > 0) {
+            loggerService.warn(`Could not update all SMS usage. Remaining: ${remainingSmsCount}. This shouldn't happen if limit check passed.`);
+        }
+
+        loggerService.info(`Successfully updated SMS usage for user ${userId}: +${smsCount - remainingSmsCount} messages`);
+    } catch (error: any) {
+        loggerService.error(`Error updating SMS usage for user ${userId}: ${error.message}`);
+        throw error; // Throw error so it can be handled appropriately
+    }
+};
 
 /**
  * Create SMS record in database
@@ -16,6 +145,12 @@ const smsAttributes = ['id', 'type', 'title', 'message', 'from', 'to', 'created_
  */
 const createSms = async (params: CreateSmsParams, transaction?: Transaction): Promise<Sms> => {
     try {
+        // Check SMS limit if user is specified
+        if (params.created_by) {
+            const smsCount = Array.isArray(params.to) ? params.to.length : 1;
+            await checkSmsLimit(params.created_by, smsCount, transaction);
+        }
+
         const smsRecord = await Sms.create(
             {
                 to: params.to,
@@ -27,6 +162,12 @@ const createSms = async (params: CreateSmsParams, transaction?: Transaction): Pr
             },
             { transaction }
         );
+
+        // Update SMS usage if user is specified
+        if (params.created_by) {
+            const smsCount = Array.isArray(params.to) ? params.to.length : 1;
+            await updateSmsUsage(params.created_by, smsCount, transaction);
+        }
 
         return smsRecord;
     } catch (error: any) {
@@ -736,4 +877,6 @@ export default {
     sendRsvpConfirmationSmsToGuest,
     sendRsvpRequestRejectedSmsToRequester,
     sendRsvpRequestApprovedSmsToRequester,
+    checkSmsLimit,
+    updateSmsUsage,
 };
