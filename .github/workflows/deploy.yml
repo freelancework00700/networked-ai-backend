@@ -1,56 +1,128 @@
-name: Deploy
+name: Build and Release
 
 on:
   push:
     branches:
       - main
       - development
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  build-and-release:
     runs-on: ubuntu-latest
 
+    # 🔥 Select GitHub Environment
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+
+    permissions:
+      contents: read
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      # Deploy Production
-      - name: Deploy to Production (main)
-        if: github.ref == 'refs/heads/main'
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.OVH_HOST }}
           port: ${{ secrets.OVH_PORT }}
-          key: ${{ secrets.OVH_SSH_KEY }}
           username: ${{ secrets.OVH_USER }}
+          key: ${{ secrets.OVH_SSH_KEY }}
           passphrase: ${{ secrets.OVH_SSH_KEY_PASSPHRASE }}
-          script: |
-            cd /home/ubuntu/projects/networked-ai/production/backend || exit 1 || exit 1
-            git fetch --all
-            git reset --hard origin/main
-            npm install
-            npm run build
-            pm2 restart 0
 
-      # Deploy DEVELOPMENT
-      - name: Deploy to Staging (development)
-        if: github.ref == 'refs/heads/development'
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.OVH_HOST }}
-          port: ${{ secrets.OVH_PORT }}
-          key: ${{ secrets.OVH_SSH_KEY }}
-          username: ${{ secrets.OVH_USER }}
-          passphrase: ${{ secrets.OVH_SSH_KEY_PASSPHRASE }}
           script: |
-            cd /home/ubuntu/projects/networked-ai/development/backend || exit 1 || exit 1
+            set -e
+
+            # -----------------------------
+            # Node version (CHANGE HERE)
+            # -----------------------------
+            NODE_VERSION=24
+
+            # Load NVM if available
+            if [ -s "$HOME/.nvm/nvm.sh" ]; then
+              echo "🔧 Loading NVM"
+              . "$HOME/.nvm/nvm.sh"
+              nvm install $NODE_VERSION
+              nvm use $NODE_VERSION
+            else
+              echo "⚠️ NVM not found, using system Node"
+            fi
+
+            echo "🟢 Node version: $(node -v)"
+            echo "📦 NPM version: $(npm -v)"
+
+            # -----------------------------
+            # Select environment
+            # -----------------------------
+            if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+              BRANCH="main"
+              APP_PATH="/home/ubuntu/projects/networked-ai/production/backend"
+              PM2_ID=0
+              NODE_ENV="production"
+              echo "🚀 Deploying PRODUCTION"
+            else
+              BRANCH="development"
+              APP_PATH="/home/ubuntu/projects/networked-ai/development/backend"
+              PM2_ID=1
+              NODE_ENV="development"
+              echo "🧪 Deploying DEVELOPMENT"
+            fi
+
+            cd $APP_PATH
+
+            echo "📦 Updating code..."
             git fetch --all
-            git reset --hard origin/development
+            git reset --hard origin/$BRANCH
+
+            echo "🧪 Creating .env from GitHub Environment secrets..."
+            cat > .env << EOF
+            NODE_ENV=$NODE_ENV
+            PORT=${{ secrets.PORT }}
+
+            API_URL=${{ secrets.API_URL }}
+            FRONT_URL=${{ secrets.FRONT_URL }}
+            ADMIN_URL=${{ secrets.ADMIN_URL }}
+
+            MYSQL_USER=${{ secrets.MYSQL_USER }}
+            MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+            MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+            MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+            DB_NAME=${{ secrets.DB_NAME }}
+
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
+
+            AWS_API_VERSION=${{ secrets.AWS_API_VERSION }}
+            AWS_SES_ACCESS_KEY_ID=${{ secrets.AWS_SES_ACCESS_KEY_ID }}
+            AWS_SES_SECRET_ACCESS_KEY=${{ secrets.AWS_SES_SECRET_ACCESS_KEY }}
+            AWS_SES_REGION=${{ secrets.AWS_SES_REGION }}
+            AWS_SES_FROM_EMAIL=${{ secrets.AWS_SES_FROM_EMAIL }}
+            AWS_SES_SENDING_RATE=${{ secrets.AWS_SES_SENDING_RATE }}
+            AWS_SES_MAX_CONNECTIONS=${{ secrets.AWS_SES_MAX_CONNECTIONS }}
+
+            TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}
+            TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}
+            TWILIO_AUTHTOKEN=${{ secrets.TWILIO_AUTHTOKEN }}
+
+            SEED=${{ secrets.SEED }}
+            THUMBNAIL_SIZE=${{ secrets.THUMBNAIL_SIZE }}
+
+            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+            STRIPE_MAIN_ACCOUNT_WEBHOOK_SECRET=${{ secrets.STRIPE_MAIN_ACCOUNT_WEBHOOK_SECRET }}
+            STRIPE_CONNECTED_ACCOUNT_WEBHOOK_SECRET=${{ secrets.STRIPE_CONNECTED_ACCOUNT_WEBHOOK_SECRET }}
+
+            RABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}
+            RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}
+            RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}
+            RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+            RABBITMQ_VHOST=${{ secrets.RABBITMQ_VHOST }}
+
+            UNSPLASH_API_KEY=${{ secrets.UNSPLASH_API_KEY }}
+            EOF
+
+            echo "📦 Installing dependencies..."
             npm install
+
+            echo "🏗️ Building backend..."
             npm run build
-            pm2 restart 1
+
+            echo "♻️ Restarting PM2..."
+            pm2 restart $PM2_ID
+
+            echo "✅ Deployment completed successfully"
