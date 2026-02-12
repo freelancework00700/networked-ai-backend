@@ -10,6 +10,7 @@ interface dbConfig {
         port:number;
         dialect: Dialect;
         logging: boolean;
+        pool: any;
     };
 }
 
@@ -21,7 +22,14 @@ export const config: dbConfig = {
         host: env.MYSQL_HOST,
         port: env.MYSQL_PORT,
         dialect: 'mysql',
-        logging: true
+        logging: true,
+        pool: {
+            max: 500,
+            min: 0,
+            acquire: 60000,
+            idle: 10000
+        }
+
     },
     staging: {
         username: env.MYSQL_USER,
@@ -30,7 +38,14 @@ export const config: dbConfig = {
         host: env.MYSQL_HOST,
         port: env.MYSQL_PORT,
         dialect: 'mysql',
-        logging: false
+        logging: false,
+        pool: {
+            max: 500,
+            min: 0,
+            acquire: 60000,
+            idle: 10000
+        }
+
     },
     production: {
         username: env.MYSQL_USER,
@@ -39,6 +54,12 @@ export const config: dbConfig = {
         host: env.MYSQL_HOST,
         port: env.MYSQL_PORT,
         dialect: 'mysql',
-        logging: false
+        logging: false,
+        pool: {
+            max: 500,
+            min: 0,
+            acquire: 60000,
+            idle: 10000
+        }
     }
 };
