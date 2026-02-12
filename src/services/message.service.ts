@@ -419,7 +419,6 @@ const handleFileUpload = async (
 /** Get unread message count for a user in a room */
 const getUnreadMessageCount = async (roomId: string, userId: string, transaction?: Transaction) => {
     return await ChatMessage.count({
-        attributes: chatMessageAttributes,
         where: {
             chat_room_id: roomId,
             read_by_recipients: {
