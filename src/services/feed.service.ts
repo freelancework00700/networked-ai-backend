@@ -40,7 +40,6 @@ const eventIncludeClause = [
         attributes: eventAttributes,
         where: { is_deleted: false },
         through: { attributes: [] },
-        include: includeDetails,
     }
 ]
 
