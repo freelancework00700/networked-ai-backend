@@ -25,7 +25,7 @@ export const getAllSmsSchema = {
         search: { type: 'string', maxLength: 255 },
         date_from: { type: 'string', minLength: 1 },
         order_direction: { type: 'string', enum: ['ASC', 'DESC'] },
-        order_by: { type: 'string', enum: ['message', 'created_at'] },
+        order_by: { type: 'string', enum: ['title', 'message', 'created_at'] },
     },
     additionalProperties: false,
 };
