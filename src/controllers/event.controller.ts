@@ -183,15 +183,9 @@ export const getEventByIdOrSlug = async (req: Request, res: Response, next: Next
         const { value } = req.params;
         const includeDetails = req.query.include_details === 'true';
         const authUserId = res.locals.auth?.user?.id ?? null;
-        const isAuthenticated = !!authUserId;
 
         const event = await eventService.getEventByIdOrSlug(value as string, includeDetails);
         if (!event) {
-            return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
-        }
-
-        // If not authenticated, only allow access to public events
-        if (!isAuthenticated && !event.is_public) {
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
 

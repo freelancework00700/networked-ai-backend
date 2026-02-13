@@ -8,6 +8,7 @@ import User from './user.model';
  */
 export class FeedComment extends Model {
     public id!: string;
+    public firebase_comment_id!: string;
     public feed_id!: string;
     public user_id!: string;
     public parent_comment_id!: string | null;
@@ -32,6 +33,12 @@ export class FeedComment extends Model {
                     type: DataTypes.UUID,
                     defaultValue: DataTypes.UUIDV4,
                     primaryKey: true,
+                },
+                firebase_comment_id: {
+                    type: DataTypes.STRING(255),
+                    allowNull: true,
+                    unique: true,
+                    comment: 'Firebase comment ID for migration and reference',
                 },
                 feed_id: {
                     type: DataTypes.UUID,

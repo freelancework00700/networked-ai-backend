@@ -10,6 +10,7 @@ import User from './user.model';
  */
 export class Feed extends Model {
     public id!: string;
+    public firebase_post_id!: string;
     public address!: string;
     public latitude!: string;
     public longitude!: string;
@@ -36,6 +37,12 @@ export class Feed extends Model {
                     type: DataTypes.UUID,
                     defaultValue: DataTypes.UUIDV4,
                     primaryKey: true,
+                },
+                firebase_post_id: {
+                    type: DataTypes.STRING(255),
+                    allowNull: true,
+                    unique: true,
+                    comment: 'Firebase post ID for migration and reference',
                 },
                 address: {
                     type: DataTypes.STRING(255),
