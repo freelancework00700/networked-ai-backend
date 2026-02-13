@@ -814,7 +814,7 @@ export const getAllSmsPaginated = async (
         if (toDate && !isNaN(toDate.getTime())) whereClause.created_at[Op.lte] = toDate;
     }
 
-    const validOrderColumns = ['message', 'created_at'];
+    const validOrderColumns = ['title', 'message', 'created_at'];
     const safeOrder = validOrderColumns.includes(order_by) ? order_by : 'created_at';
 
     const { count, rows } = await Sms.findAndCountAll({

@@ -38,7 +38,7 @@ try {
         // alter: false prevents automatic table modifications
         // This avoids issues with MySQL's 64 key limit and table structure conflicts
         // Use migrations for schema changes in production
-        await sequelize.sync({ alter: true });
+        await sequelize.sync({ alter: false });
         Logger.info('Database and models synchronized successfully.');
 
         // Seed default data

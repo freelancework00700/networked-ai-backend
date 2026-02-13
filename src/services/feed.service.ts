@@ -8,7 +8,7 @@ import { MediaParams } from '../types/event.interfaces';
 import { CreateFeedParams, FeedEventParams } from '../types/feed.interfaces';
 import { includeDetails } from './event.service';
 
-const eventAttributes = ['id', 'title', 'slug', 'description', 'address', 'latitude', 'longitude', 'city', 'state', 'country', 'category_id', 'is_paid_event', 'start_date', 'end_date', 'capacity', 'is_public', 'parent_event_id'];
+const eventAttributes = ['id', 'title', 'slug', 'description', 'address', 'latitude', 'longitude', 'is_paid_event', 'start_date', 'end_date', 'is_public', 'thumbnail_url', 'image_url'];
 
 const IncludeClause = [
     {
