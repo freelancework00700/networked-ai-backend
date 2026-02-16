@@ -87,7 +87,14 @@ export class Sms extends Model {
                                 .replace(/-/g, '')
                                 .startsWith('+') ? String(recipient) : `+${String(recipient)}`;
 
-                            await sendSms(formattedPhoneNumber, sms.message);
+                            const result = await sendSms(formattedPhoneNumber, sms.message);
+                            
+                            // Handle case when SMS service is disabled
+                            if (result === null) {
+                                loggerService.info(`SMS service is disabled. Skipping SMS to ${formattedPhoneNumber}. SMS ID: ${sms.id}`);
+                                return { success: true, to: formattedPhoneNumber, skipped: true };
+                            }
+                            
                             loggerService.info(`SMS sent to ${formattedPhoneNumber}. SMS ID: ${sms.id}`);
                             return { success: true, to: formattedPhoneNumber };
                         } catch (error: any) {

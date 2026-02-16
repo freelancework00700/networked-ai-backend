@@ -112,9 +112,15 @@ export class Email extends Model {
                         }
 
                         const res = await sendEmail(mailOptions);
-                        loggerService.info(`Email batch sent. Email ID: ${email.id}, Batch: ${Math.floor(i / batchSize) + 1}, Recipients: ${emailBatch.length}`);
-                        loggerService.info(`res: ${res.toString()}`);
-                        loggerService.info(`res: ${JSON.stringify(res)}`);
+                        
+                        // Handle case when email service is disabled
+                        if (res === null) {
+                            loggerService.info(`Email service is disabled. Skipping email batch. Email ID: ${email.id}`);
+                        } else {
+                            loggerService.info(`Email batch sent. Email ID: ${email.id}, Batch: ${Math.floor(i / batchSize) + 1}, Recipients: ${emailBatch.length}`);
+                            loggerService.info(`res: ${res.toString()}`);
+                            loggerService.info(`res: ${JSON.stringify(res)}`);
+                        }
 
                         // Wait 1 second before sending next batch (except for the last batch)
                         if (i + batchSize < bcc.length) {
