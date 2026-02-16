@@ -211,6 +211,30 @@ export const getEventIncludes = (userId?: string | null) => {
                 attributes: userAttributes,
             }],
         });
+
+        include.push({
+            model: EventAttendee,
+            as: 'attendees',
+            required: false,
+            where: { is_deleted: false, user_id: userId },
+            attributes: eventAttendeeAttributes,
+            include: [
+                {
+                model: User,
+                as: 'user',
+                required: false,
+                where: { is_deleted: false },
+                attributes: userAttributes,
+                },
+                {
+                    model: EventTickets,
+                    as: 'event_ticket',
+                    required: false,
+                    // where: { is_deleted: false },
+                    attributes: eventTicketsAttributes,
+                }
+            ]
+        });
     }
 
     return include;
