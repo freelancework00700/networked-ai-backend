@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { sequelize } from '../server';
 import { User, Event, Notification } from '../models';
 import * as eventService from '../services/event.service';
+import { getEventAttendeesPaginated, getEventParticipantsPaginated } from '../services/event.service';
 import { NotificationType } from '../types/enums';
 import gamificationCategoryService from '../services/gamification-category.service';
 import userGamificationCategoryBadgesService from '../services/user-gamification-category-badges.service';
@@ -184,7 +185,7 @@ export const getEventByIdOrSlug = async (req: Request, res: Response, next: Next
         const includeDetails = req.query.include_details === 'true';
         const authUserId = res.locals.auth?.user?.id ?? null;
 
-        const event = await eventService.getEventByIdOrSlug(value as string, includeDetails);
+        const event = await eventService.getEventByIdOrSlug(value as string, includeDetails, authUserId);
         if (!event) {
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
@@ -204,7 +205,7 @@ export const getEventByIdOrSlug = async (req: Request, res: Response, next: Next
 
         // Optimize connection status: batch all users together and use lookup map
         if (includeDetails && authUserId) {
-            const eventJson: any = transformedEvent;
+        const eventJson: any = transformedEvent;
             
             // Collect all unique users from both participants and attendees in one pass
             const allUsers: any[] = [];
@@ -878,6 +879,75 @@ export const sendNetworkBroadcast = async (req: Request, res: Response, next: Ne
         loggerService.error(`Error sending network broadcast: ${error}`);
         sendServerErrorResponse(res, responseMessages.user.networkBroadcastFailed, error);
         next(error);
+    }
+};
+
+/** Get event attendees with pagination and search */
+export const getEventAttendees = async (req: Request, res: Response) => {
+    try {
+        const { value } = req.params;
+        const authUserId = res.locals.auth?.user?.id;
+
+        // Parse and validate query parameters
+        const { page, limit, search, rsvp_status, order_by, order_direction } = req.query as Record<string, string>;
+
+        // Handle multiple RSVP statuses (comma-separated)
+        let rsvpStatuses: string[] = [];
+        if (rsvp_status) rsvpStatuses = rsvp_status.split(',').map(s => s.trim()).filter(s => s);
+        const options = {
+            search: search || '',
+            rsvp_status: rsvpStatuses,
+            order_by: order_by || 'created_at',
+            page: page ? parseInt(page, 10) : 1,
+            limit: limit ? parseInt(limit, 10) : 10,
+            order_direction: order_direction || 'DESC',
+        };
+
+        // Get event by ID or slug
+        const event = await eventService.getEventByIdOrSlug(value as string);
+        if (!event) return sendNotFoundResponse(res, responseMessages.event.notFound);
+
+        // Get event attendees
+        const result = await getEventAttendeesPaginated(event.id, authUserId, options);
+        return sendSuccessResponse(res, responseMessages.event.retrieved, result);
+    } catch (error) {
+        loggerService.error(`Error fetching event attendees: ${error}`);
+        return sendServerErrorResponse(res, responseMessages.event.failedToFetch, error);
+    }
+};
+
+/** Get event participants with pagination and search */
+export const getEventParticipants = async (req: Request, res: Response) => {
+    try {
+        const { value } = req.params;
+        const authUserId = res.locals.auth?.user?.id;
+
+        // Parse and validate query parameters
+        const { page, limit, search, role, order_by, order_direction } = req.query as Record<string, string>;
+        
+        // Handle multiple roles (comma-separated)
+        let roles: string[] = [];
+        if (role) roles = role.split(',').map(r => r.trim()).filter(r => r);
+
+        const options = {
+            role: roles,
+            search: search || '',
+            order_by: order_by || 'created_at',
+            page: page ? parseInt(page, 10) : 1,
+            limit: limit ? parseInt(limit, 10) : 10,
+            order_direction: order_direction || 'DESC',
+        };
+
+        // Get event by ID or slug
+        const event = await eventService.getEventByIdOrSlug(value as string);
+        if (!event) return sendNotFoundResponse(res, responseMessages.event.notFound);
+
+        // Get event participants
+        const result = await getEventParticipantsPaginated(event.id, authUserId, options);
+        return sendSuccessResponse(res, responseMessages.event.retrieved, result);
+    } catch (error) {
+        loggerService.error(`Error fetching event participants: ${error}`);
+        return sendServerErrorResponse(res, responseMessages.event.failedToFetch, error);
     }
 };
 

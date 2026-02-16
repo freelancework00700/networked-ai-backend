@@ -52,144 +52,170 @@ const eventFeedbackAttributes = ['id', 'user_id', 'question_id', 'answer_option_
 const stripePriceAttributes = ['id', 'amount', 'interval', 'active'];
 const stripeProductAttributes = ['id', 'name', 'description', 'plan_benefits', 'is_sponsor', 'active'];
 
-export const includeDetails = [
-    {
-        model: EventSetting,
-        attributes: eventSettingAttributes,
-        as: 'settings',
-        required: false,
-        where: { is_deleted: false }
-    },
-    {
-        model: EventMedia,
-        attributes: eventMediaAttributes,
-        as: 'medias',
-        required: false,
-        where: { is_deleted: false }
-    },
-    {
-        model: EventTickets,
-        attributes: eventTicketsAttributes,
-        as: 'tickets',
-        required: false,
-        where: { is_deleted: false },
-        separate: true,
-        order: [['order', 'ASC']] as [string, 'ASC' | 'DESC'][],
-    },
-    {
-        model: EventPromoCode,
-        attributes: eventPromoCodeAttributes,
-        as: 'promo_codes',
-        required: false,
-        where: { is_deleted: false }
-    },
-    {
-        model: Vibe,
-        as: 'vibes',
-        required: false,
-        attributes: masterAttributes,
-        where: { is_deleted: false },
-        through: { attributes: [] },
-    },
-    {
-        model: EventParticipant,
-        attributes: eventParticipantAttributes,
-        as: 'participants',
-        required: false,
-        where: { is_deleted: false },
-        include: [{
-            model: User,
-            as: 'user',
+export const getEventIncludes = (userId?: string | null) => {
+    const include: any[] = [
+        {
+            model: EventSetting,
+            attributes: eventSettingAttributes,
+            as: 'settings',
+            required: false,
+            where: { is_deleted: false }
+        },
+        {
+            model: EventMedia,
+            attributes: eventMediaAttributes,
+            as: 'medias',
+            required: false,
+            where: { is_deleted: false }
+        },
+        {
+            model: EventTickets,
+            attributes: eventTicketsAttributes,
+            as: 'tickets',
             required: false,
             where: { is_deleted: false },
-            attributes: userAttributes,
-        }]
-    },
-    {
-        model: EventQuestion,
-        attributes: eventQuestionAttributes,
-        as: 'questionnaire',
-        required: false,
-        where: { is_deleted: false },
-        separate: true,
-        order: [['order', 'ASC']] as [string, 'ASC' | 'DESC'][],
-        include: [{
-            model: EventQuestionOption,
-            as: 'options',
-            required: false,
-            where: { is_deleted: false },
-            attributes: eventQuestionOptionAttributes,
             separate: true,
             order: [['order', 'ASC']] as [string, 'ASC' | 'DESC'][],
-        }]
-    },
-    {
-        model: RSVPRequest,
-        as: 'rsvp_requests',
-        separate: true,
-        required: false,
-        where: { is_deleted: false },
-        attributes: ['id', 'status', 'user_id'],
-        include: [{
-            model: User,
-            as: 'user',
-            required: false,
-            where: { is_deleted: false },
-            attributes: userAttributes,
-        }],
-    },
-    {
-        model: EventAttendee,
-        as: 'attendees',
-        required: false,
-        where: { is_deleted: false },
-        attributes: eventAttendeeAttributes,
-        include: [
-            {
-            model: User,
-            as: 'user',
-            required: false,
-            where: { is_deleted: false },
-            attributes: userAttributes,
-            },
-            {
-                model: EventTickets,
-                as: 'event_ticket',
-                required: false,
-                // where: { is_deleted: false },
-                attributes: eventTicketsAttributes,
-            }
-        ]
-    },
-    {
-        model: Event,
-        as: 'parent_event',
-        required: false,
-        where: { is_deleted: false },
-        attributes: eventAttributes,
-    },
-    {
-        model: StripeProduct,
-        as: 'plans',
-        required: false,
-        where: { 
-            active: true,
-            is_deleted: false 
         },
-        attributes: stripeProductAttributes,
-        through: { attributes: [] },
-        include: [{
-            model: StripePrice,
-            as: 'prices',
+        {
+            model: EventPromoCode,
+            attributes: eventPromoCodeAttributes,
+            as: 'promo_codes',
             required: false,
-            where: {
+            where: { is_deleted: false }
+        },
+        {
+            model: Vibe,
+            as: 'vibes',
+            required: false,
+            attributes: masterAttributes,
+            where: { is_deleted: false },
+            through: { attributes: [] },
+        },
+        {
+            model: EventParticipant,
+            attributes: eventParticipantAttributes,
+            as: 'participants',
+            required: false,
+            where: { is_deleted: false },
+            include: [{
+                model: User,
+                as: 'user',
+                required: false,
+                where: { is_deleted: false },
+                attributes: userAttributes,
+            }]
+        },
+        {
+            model: EventQuestion,
+            attributes: eventQuestionAttributes,
+            as: 'questionnaire',
+            required: false,
+            where: { is_deleted: false },
+            separate: true,
+            order: [['order', 'ASC']] as [string, 'ASC' | 'DESC'][],
+            include: [{
+                model: EventQuestionOption,
+                as: 'options',
+                required: false,
+                where: { is_deleted: false },
+                attributes: eventQuestionOptionAttributes,
+                separate: true,
+                order: [['order', 'ASC']] as [string, 'ASC' | 'DESC'][],
+            }]
+        },
+        // {
+        //     model: RSVPRequest,
+        //     as: 'rsvp_requests',
+        //     separate: true,
+        //     required: false,
+        //     where: { is_deleted: false },
+        //     attributes: ['id', 'status', 'user_id'],
+        //     include: [{
+        //         model: User,
+        //         as: 'user',
+        //         required: false,
+        //         where: { is_deleted: false },
+        //         attributes: userAttributes,
+        //     }],
+        // },
+        // {
+        //     model: EventAttendee,
+        //     as: 'attendees',
+        //     required: false,
+        //     where: { is_deleted: false },
+        //     attributes: eventAttendeeAttributes,
+        //     include: [
+        //         {
+        //         model: User,
+        //         as: 'user',
+        //         required: false,
+        //         where: { is_deleted: false },
+        //         attributes: userAttributes,
+        //         },
+        //         {
+        //             model: EventTickets,
+        //             as: 'event_ticket',
+        //             required: false,
+        //             // where: { is_deleted: false },
+        //             attributes: eventTicketsAttributes,
+        //         }
+        //     ]
+        // },
+        {
+            model: Event,
+            as: 'parent_event',
+            required: false,
+            where: { is_deleted: false },
+            attributes: eventAttributes,
+        },
+        {
+            model: StripeProduct,
+            as: 'plans',
+            required: false,
+            where: { 
                 active: true,
                 is_deleted: false 
             },
-            attributes: stripePriceAttributes,
-        }]
+            attributes: stripeProductAttributes,
+            through: { attributes: [] },
+            include: [{
+                model: StripePrice,
+                as: 'prices',
+                required: false,
+                where: {
+                    active: true,
+                    is_deleted: false 
+                },
+                attributes: stripePriceAttributes,
+            }]
+        }
+    ];
+
+    if (userId) {
+        include.push({
+            model: RSVPRequest,
+            as: 'rsvp_requests',
+            separate: true,
+            required: false,
+            where: {
+                is_deleted: false,
+                user_id: userId
+            },
+            attributes: ['id', 'status', 'user_id'],
+            include: [{
+                model: User,
+                as: 'user',
+                required: false,
+                where: { is_deleted: false },
+                attributes: userAttributes,
+            }],
+        });
     }
-];
+
+    return include;
+};
+
 
 const includeSettings = [
     {
@@ -493,22 +519,71 @@ const updateEventMedias = async (
     updatedBy: string,
     transaction: Transaction
 ): Promise<void> => {
-    // Soft delete existing media
-    await EventMedia.update(
-        {
-            is_deleted: true,
-            deleted_at: new Date(),
-            deleted_by: updatedBy,
-        },
-        {
-            where: { event_id: eventId, is_deleted: false },
-            transaction,
-        }
-    );
+    if (!medias || medias.length === 0) {
+        // If no media provided, soft delete all existing media
+        await EventMedia.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
+        return;
+    }
 
-    // Create new media if provided
-    if (medias && medias.length > 0) {
-        await createEventMedias(eventId, medias, updatedBy, transaction);
+    // Get existing media
+    const existingMedia = await EventMedia.findAll({
+        attributes: ['id'],
+        where: { event_id: eventId, is_deleted: false },
+        transaction,
+    });
+
+    const existingMediaIds = new Set(existingMedia.map(m => m.id));
+    const incomingMediaIds = new Set(medias.filter(m => m.id).map(m => m.id));
+    
+    // Update existing media
+    for (const media of medias) {
+        if (media.id && existingMediaIds.has(media.id)) {
+            // Update existing media
+            await EventMedia.update(
+                {
+                    media_url: media.media_url,
+                    media_type: media.media_type,
+                    order: media.order,
+                    updated_by: updatedBy,
+                },
+                {
+                    where: { id: media.id, event_id: eventId, is_deleted: false },
+                    transaction,
+                }
+            );
+        }
+    }
+
+    // Create new media (those without ID)
+    const newMedias = medias.filter(m => !m.id);
+    if (newMedias.length > 0) {
+        await createEventMedias(eventId, newMedias, updatedBy, transaction);
+    }
+
+    // Soft delete media that are not in the incoming list
+    const mediaToDelete = [...existingMediaIds].filter(id => !incomingMediaIds.has(id));
+    if (mediaToDelete.length > 0) {
+        await EventMedia.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { id: { [Op.in]: mediaToDelete }, event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
     }
 };
 
@@ -519,22 +594,77 @@ const updateEventTickets = async (
     updatedBy: string,
     transaction: Transaction
 ): Promise<void> => {
-    // Soft delete existing tickets
-    await EventTickets.update(
-        {
-            is_deleted: true,
-            deleted_at: new Date(),
-            deleted_by: updatedBy,
-        },
-        {
-            where: { event_id: eventId, is_deleted: false },
-            transaction,
-        }
-    );
+    if (!tickets || tickets.length === 0) {
+        // If no tickets provided, soft delete all existing tickets
+        await EventTickets.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
+        return;
+    }
 
-    // Create new tickets if provided
-    if (tickets && tickets.length > 0) {
-        await createEventTickets(eventId, tickets, updatedBy, transaction);
+    // Get existing tickets
+    const existingTickets = await EventTickets.findAll({
+        attributes: ['id'],
+        where: { event_id: eventId, is_deleted: false },
+        transaction,
+    });
+
+    const existingTicketIds = new Set(existingTickets.map(t => t.id));
+    const incomingTicketIds = new Set(tickets.filter(t => t.id).map(t => t.id));
+    
+    // Update existing tickets
+    for (const ticket of tickets) {
+        if (ticket.id && existingTicketIds.has(ticket.id)) {
+            // Update existing ticket
+            await EventTickets.update(
+                {
+                    name: ticket.name,
+                    price: ticket.price,
+                    quantity: ticket.quantity,
+                    description: ticket.description,
+                    ticket_type: ticket.ticket_type,
+                    sales_start_date: new Date(ticket.sales_start_date),
+                    sales_end_date: new Date(ticket.sales_end_date),
+                    end_at_event_start: ticket.end_at_event_start,
+                    order: ticket.order,
+                    updated_by: updatedBy,
+                },
+                {
+                    where: { id: ticket.id, event_id: eventId, is_deleted: false },
+                    transaction,
+                }
+            );
+        }
+    }
+
+    // Create new tickets (those without ID)
+    const newTickets = tickets.filter(t => !t.id);
+    if (newTickets.length > 0) {
+        await createEventTickets(eventId, newTickets, updatedBy, transaction);
+    }
+
+    // Soft delete tickets that are not in the incoming list
+    const ticketsToDelete = [...existingTicketIds].filter(id => !incomingTicketIds.has(id));
+    if (ticketsToDelete.length > 0) {
+        await EventTickets.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { id: { [Op.in]: ticketsToDelete }, event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
     }
 };
 
@@ -545,22 +675,74 @@ const updateEventPromoCodes = async (
     updatedBy: string,
     transaction: Transaction
 ): Promise<void> => {
-    // Soft delete existing promo codes
-    await EventPromoCode.update(
-        {
-            is_deleted: true,
-            deleted_at: new Date(),
-            deleted_by: updatedBy,
-        },
-        {
-            where: { event_id: eventId, is_deleted: false },
-            transaction,
-        }
-    );
+    if (!promoCodeParams || promoCodeParams.length === 0) {
+        // If no promo codes provided, soft delete all existing promo codes
+        await EventPromoCode.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
+        return;
+    }
 
-    // Create new promo codes if provided
-    if (promoCodeParams && promoCodeParams.length > 0) {
-        await createEventPromoCodes(eventId, promoCodeParams, updatedBy, transaction);
+    // Get existing promo codes
+    const existingPromoCodes = await EventPromoCode.findAll({
+        attributes: ['id'],
+        where: { event_id: eventId, is_deleted: false },
+        transaction,
+    });
+
+    const existingPromoCodeIds = new Set(existingPromoCodes.map(p => p.id));
+    const incomingPromoCodeIds = new Set(promoCodeParams.filter(p => p.id).map(p => p.id));
+    
+    // Update existing promo codes
+    for (const promoCode of promoCodeParams) {
+        if (promoCode.id && existingPromoCodeIds.has(promoCode.id)) {
+            // Update existing promo code
+            await EventPromoCode.update(
+                {
+                    promo_code: promoCode.promo_code,
+                    type: promoCode.type,
+                    value: promoCode.value,
+                    capped_amount: promoCode.capped_amount,
+                    quantity: promoCode.quantity,
+                    max_uses_per_user: promoCode.max_uses_per_user,
+                    updated_by: updatedBy,
+                },
+                {
+                    where: { id: promoCode.id, event_id: eventId, is_deleted: false },
+                    transaction,
+                }
+            );
+        }
+    }
+
+    // Create new promo codes (those without ID)
+    const newPromoCodes = promoCodeParams.filter(p => !p.id);
+    if (newPromoCodes.length > 0) {
+        await createEventPromoCodes(eventId, newPromoCodes, updatedBy, transaction);
+    }
+
+    // Soft delete promo codes that are not in the incoming list
+    const promoCodesToDelete = [...existingPromoCodeIds].filter(id => !incomingPromoCodeIds.has(id));
+    if (promoCodesToDelete.length > 0) {
+        await EventPromoCode.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { id: { [Op.in]: promoCodesToDelete }, event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
     }
 };
 
@@ -571,49 +753,161 @@ const updateEventParticipants = async (
     updatedBy: string,
     transaction: Transaction
 ): Promise<void> => {
-    // Get existing participants before deleting
+    if (!eventParticipants || eventParticipants.length === 0) {
+        // If no participants provided, soft delete all existing participants
+        const existingParticipants = await EventParticipant.findAll({
+            where: { event_id: eventId, is_deleted: false },
+            transaction,
+        });
+
+        // Decrement user totals for existing participants
+        for (const participant of existingParticipants) {
+            switch (participant.role) {
+                case EventParticipantRole.HOST:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_hosted', transaction);
+                    break;
+                case EventParticipantRole.CO_HOST:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_cohosted', transaction);
+                    break;
+                case EventParticipantRole.SPEAKER:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_spoken', transaction);
+                    break;
+                case EventParticipantRole.SPONSOR:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_sponsored', transaction);
+                    break;
+                case EventParticipantRole.STAFF:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_staffed', transaction);
+                    break;
+            }
+        }
+
+        await EventParticipant.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
+        return;
+    }
+
+    // Get existing participants
     const existingParticipants = await EventParticipant.findAll({
+        attributes: ['id'],
         where: { event_id: eventId, is_deleted: false },
         transaction,
     });
 
-    // Decrement user totals for existing participants
-    for (const participant of existingParticipants) {
-        switch (participant.role) {
-            case EventParticipantRole.HOST:
-                await userService.decrementUserTotal(participant.user_id, 'total_events_hosted', transaction);
-                break;
-            case EventParticipantRole.CO_HOST:
-                await userService.decrementUserTotal(participant.user_id, 'total_events_cohosted', transaction);
-                break;
-            case EventParticipantRole.SPEAKER:
-                await userService.decrementUserTotal(participant.user_id, 'total_events_spoken', transaction);
-                break;
-            case EventParticipantRole.SPONSOR:
-                await userService.decrementUserTotal(participant.user_id, 'total_events_sponsored', transaction);
-                break;
-            case EventParticipantRole.STAFF:
-                await userService.decrementUserTotal(participant.user_id, 'total_events_staffed', transaction);
-                break;
+    const existingParticipantIds = new Set(existingParticipants.map(p => p.id));
+    const incomingParticipantIds = new Set(eventParticipants.filter(p => p.id).map(p => p.id));
+    
+    // Update existing participants and handle role changes
+    for (const participant of eventParticipants) {
+        if (participant.id && existingParticipantIds.has(participant.id)) {
+            const existingParticipant = existingParticipants.find(p => p.id === participant.id);
+            
+            // Handle role change - decrement old role total
+            if (existingParticipant && existingParticipant.role !== participant.role) {
+                switch (existingParticipant.role) {
+                    case EventParticipantRole.HOST:
+                        await userService.decrementUserTotal(existingParticipant.user_id, 'total_events_hosted', transaction);
+                        break;
+                    case EventParticipantRole.CO_HOST:
+                        await userService.decrementUserTotal(existingParticipant.user_id, 'total_events_cohosted', transaction);
+                        break;
+                    case EventParticipantRole.SPEAKER:
+                        await userService.decrementUserTotal(existingParticipant.user_id, 'total_events_spoken', transaction);
+                        break;
+                    case EventParticipantRole.SPONSOR:
+                        await userService.decrementUserTotal(existingParticipant.user_id, 'total_events_sponsored', transaction);
+                        break;
+                    case EventParticipantRole.STAFF:
+                        await userService.decrementUserTotal(existingParticipant.user_id, 'total_events_staffed', transaction);
+                        break;
+                }
+                
+                // Increment new role total
+                switch (participant.role) {
+                    case EventParticipantRole.HOST:
+                        await userService.incrementUserTotal(participant.user_id, 'total_events_hosted', transaction);
+                        break;
+                    case EventParticipantRole.CO_HOST:
+                        await userService.incrementUserTotal(participant.user_id, 'total_events_cohosted', transaction);
+                        break;
+                    case EventParticipantRole.SPEAKER:
+                        await userService.incrementUserTotal(participant.user_id, 'total_events_spoken', transaction);
+                        break;
+                    case EventParticipantRole.SPONSOR:
+                        await userService.incrementUserTotal(participant.user_id, 'total_events_sponsored', transaction);
+                        break;
+                    case EventParticipantRole.STAFF:
+                        await userService.incrementUserTotal(participant.user_id, 'total_events_staffed', transaction);
+                        break;
+                }
+            }
+
+            // Update existing participant
+            await EventParticipant.update(
+                {
+                    user_id: participant.user_id,
+                    role: participant.role,
+                    updated_by: updatedBy,
+                },
+                {
+                    where: { id: participant.id, event_id: eventId, is_deleted: false },
+                    transaction,
+                }
+            );
         }
     }
 
-    // Soft delete existing participants
-    await EventParticipant.update(
-        {
-            is_deleted: true,
-            deleted_at: new Date(),
-            deleted_by: updatedBy,
-        },
-        {
-            where: { event_id: eventId, is_deleted: false },
-            transaction,
-        }
-    );
+    // Create new participants (those without ID)
+    const newParticipants = eventParticipants.filter(p => !p.id);
+    if (newParticipants.length > 0) {
+        await createEventParticipants(eventId, newParticipants, updatedBy, transaction);
+    }
 
-    // Create new participants if provided
-    if (eventParticipants && eventParticipants.length > 0) {
-        await createEventParticipants(eventId, eventParticipants, updatedBy, transaction);
+    // Soft delete participants that are not in the incoming list and decrement their totals
+    const participantsToDelete = [...existingParticipantIds].filter(id => !incomingParticipantIds.has(id));
+    if (participantsToDelete.length > 0) {
+        const participantsToDeleteRecords = existingParticipants.filter(p => participantsToDelete.includes(p.id));
+        
+        // Decrement user totals for participants being deleted
+        for (const participant of participantsToDeleteRecords) {
+            switch (participant.role) {
+                case EventParticipantRole.HOST:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_hosted', transaction);
+                    break;
+                case EventParticipantRole.CO_HOST:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_cohosted', transaction);
+                    break;
+                case EventParticipantRole.SPEAKER:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_spoken', transaction);
+                    break;
+                case EventParticipantRole.SPONSOR:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_sponsored', transaction);
+                    break;
+                case EventParticipantRole.STAFF:
+                    await userService.decrementUserTotal(participant.user_id, 'total_events_staffed', transaction);
+                    break;
+            }
+        }
+
+        await EventParticipant.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { id: { [Op.in]: participantsToDelete }, event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
     }
 };
 
@@ -647,16 +941,118 @@ const updateEventQuestionaries = async (
     updatedBy: string,
     transaction: Transaction
 ): Promise<void> => {
+    if (!questionnaire || questionnaire.length === 0) {
+        // If no questions provided, soft delete all existing questions and their options
+        const existingQuestions = await EventQuestion.findAll({
+            where: { event_id: eventId, is_deleted: false },
+            transaction,
+        });
+
+        const questionIds = existingQuestions.map((q) => q.id);
+
+        // Soft delete existing question options
+        if (questionIds.length > 0) {
+            await EventQuestionOption.update(
+                {
+                    is_deleted: true,
+                    deleted_at: new Date(),
+                    deleted_by: updatedBy,
+                },
+                {
+                    where: { question_id: { [Op.in]: questionIds } },
+                    transaction,
+                }
+            );
+        }
+
+        // Soft delete existing questions
+        await EventQuestion.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
+        return;
+    }
+
     // Get existing questions
     const existingQuestions = await EventQuestion.findAll({
+        attributes: ['id'],
         where: { event_id: eventId, is_deleted: false },
         transaction,
     });
 
-    const questionIds = existingQuestions.map((q) => q.id);
+    const existingQuestionIds = new Set(existingQuestions.map(q => q.id));
+    const incomingQuestionIds = new Set(questionnaire.filter(q => q.id).map(q => q.id));
+    
+    // Update existing questions
+    for (const question of questionnaire) {
+        if (question.id && existingQuestionIds.has(question.id)) {
+            // Update existing question
+            await EventQuestion.update(
+                {
+                    question: question.question,
+                    event_phase: question.event_phase,
+                    question_type: question.question_type,
+                    is_required: question.is_required,
+                    max: question.max,
+                    min: question.min,
+                    rating_scale: question.rating_scale,
+                    is_public: question.is_public,
+                    order: question.order,
+                    updated_by: updatedBy,
+                },
+                {
+                    where: { id: question.id, event_id: eventId, is_deleted: false },
+                    transaction,
+                }
+            );
 
-    // Soft delete existing question options
-    if (questionIds.length > 0) {
+            // Handle question options - soft delete existing options for this question
+            await EventQuestionOption.update(
+                {
+                    is_deleted: true,
+                    deleted_at: new Date(),
+                    deleted_by: updatedBy,
+                },
+                {
+                    where: { question_id: question.id, is_deleted: false },
+                    transaction,
+                }
+            );
+
+            // Create new options if provided
+            if (question.options && question.options.length > 0) {
+                const optionRows = question.options.map((option: QuestionOptionParams) => ({
+                    question_id: question.id,
+                    option: option.option,
+                    order: option.order,
+                    created_by: updatedBy,
+                    updated_by: updatedBy,
+                }));
+
+                await EventQuestionOption.bulkCreate(optionRows, { transaction });
+            }
+        }
+    }
+
+    // Create new questions (those without ID)
+    const newQuestions = questionnaire.filter(q => !q.id);
+    if (newQuestions.length > 0) {
+        for (const question of newQuestions) {
+            await createEventQuestionsWithOptions(eventId, question, updatedBy, transaction);
+        }
+    }
+
+    // Soft delete questions that are not in the incoming list and their options
+    const questionsToDelete = [...existingQuestionIds].filter(id => !incomingQuestionIds.has(id));
+    if (questionsToDelete.length > 0) {
+        // Soft delete question options for questions being deleted
         await EventQuestionOption.update(
             {
                 is_deleted: true,
@@ -664,30 +1060,23 @@ const updateEventQuestionaries = async (
                 deleted_by: updatedBy,
             },
             {
-                where: { question_id: { [Op.in]: questionIds } },
+                where: { question_id: { [Op.in]: questionsToDelete }, is_deleted: false },
                 transaction,
             }
         );
-    }
 
-    // Soft delete existing questions
-    await EventQuestion.update(
-        {
-            is_deleted: true,
-            deleted_at: new Date(),
-            deleted_by: updatedBy,
-        },
-        {
-            where: { event_id: eventId, is_deleted: false },
-            transaction,
-        }
-    );
-
-    // Create new questions if provided
-    if (questionnaire && questionnaire.length > 0) {
-        for (const question of questionnaire) {
-            await createEventQuestionsWithOptions(eventId, question, updatedBy, transaction);
-        }
+        // Soft delete questions
+        await EventQuestion.update(
+            {
+                is_deleted: true,
+                deleted_at: new Date(),
+                deleted_by: updatedBy,
+            },
+            {
+                where: { id: { [Op.in]: questionsToDelete }, event_id: eventId, is_deleted: false },
+                transaction,
+            }
+        );
     }
 };
 
@@ -753,34 +1142,41 @@ export const createEvent = async (
         { transaction }
     );
 
+    // Prepare all creation operations
+    const createOperations: Promise<any>[] = [];
+
     // Create event vibes
-    await createEventVibes(event.id, params.vibes, transaction);
+    createOperations.push(createEventVibes(event.id, params.vibes, transaction));
 
     // Create event settings
-    await createEventSettings(event.id, params.settings, createdBy, transaction);
+    createOperations.push(createEventSettings(event.id, params.settings, createdBy, transaction));
 
     // Create event media
-    await createEventMedias(event.id, params.medias, createdBy, transaction);
+    createOperations.push(createEventMedias(event.id, params.medias, createdBy, transaction));
 
     // Create event tickets
-    await createEventTickets(event.id, params.tickets, createdBy, transaction);
+    createOperations.push(createEventTickets(event.id, params.tickets, createdBy, transaction));
 
     // Create event promo codes
-    await createEventPromoCodes(event.id, params.promo_codes, createdBy, transaction);
+    createOperations.push(createEventPromoCodes(event.id, params.promo_codes, createdBy, transaction));
 
     // Create event participants
-    await createEventParticipants(event.id, params.participants, createdBy, transaction);
+    createOperations.push(createEventParticipants(event.id, params.participants, createdBy, transaction));
 
     // Create event questionnaires
-    await createEventQuestionaries(event.id, params.questionnaire, createdBy, transaction);
-
-    // Create post-event reminder if event has post-event questionnaire
-    // This is done here (after questionnaires are created) instead of in the afterCreate hook
-    // because the hook runs before questionnaires are created
-    await eventReminderService.createPostEventReminder(event, transaction);
+    createOperations.push(createEventQuestionaries(event.id, params.questionnaire, createdBy, transaction));
 
     // Create event-plan mappings
-    await upsertEventPlanMappings(event.id, params.plan_ids, transaction);
+    createOperations.push(upsertEventPlanMappings(event.id, params.plan_ids, transaction));
+
+    // Execute all creation operations in parallel
+    if (createOperations.length > 0) {
+        await Promise.all(createOperations);
+    }
+
+    // Create post-event reminder if event has post-event questionnaire
+    // This should run after questionnaires are created
+    await eventReminderService.createPostEventReminder(event, transaction);
 
     // Update the user total_events_hosted
     await userService.incrementUserTotal(
@@ -957,10 +1353,10 @@ export const unlikeEvent = async (
 };
 
 /** Get event by id or slug */
-export const getEventByIdOrSlug = async (value: string, shouldIncludeDetails: boolean = false): Promise<Event | null> => {
+export const getEventByIdOrSlug = async (value: string, shouldIncludeDetails: boolean = false, authUserId = null): Promise<Event | null> => {
     const include: IncludeOptions[] = [];
     if (shouldIncludeDetails) {
-        include.push(...includeDetails);
+        include.push(...getEventIncludes(authUserId));
     }
 
     const event = await Event.findOne({
@@ -1836,50 +2232,58 @@ export const updateEvent = async (
         { transaction }
     );
 
+    // Prepare all update operations
+    const updateOperations: Promise<any>[] = [];
+
     // Update event vibes
     if (params.vibes !== undefined) {
-        await updateEventVibes(eventId, params.vibes, updatedBy, transaction);
+        updateOperations.push(updateEventVibes(eventId, params.vibes, updatedBy, transaction));
     }
 
     // Update event settings
     if (params.settings) {
-        await updateEventSettings(eventId, params.settings, updatedBy, transaction);
+        updateOperations.push(updateEventSettings(eventId, params.settings, updatedBy, transaction));
     }
 
     // Update event media
     if (params.medias !== undefined) {
-        await updateEventMedias(eventId, params.medias, updatedBy, transaction);
+        updateOperations.push(updateEventMedias(eventId, params.medias, updatedBy, transaction));
     }
 
     // Update event tickets
     if (params.tickets !== undefined) {
-        await updateEventTickets(eventId, params.tickets, updatedBy, transaction);
+        updateOperations.push(updateEventTickets(eventId, params.tickets, updatedBy, transaction));
     }
 
     // Update event promo codes
     if (params.promo_codes !== undefined) {
-        await updateEventPromoCodes(eventId, params.promo_codes, updatedBy, transaction);
+        updateOperations.push(updateEventPromoCodes(eventId, params.promo_codes, updatedBy, transaction));
     }
 
     // Update event participants
     if (params.participants !== undefined) {
-        await updateEventParticipants(eventId, params.participants, updatedBy, transaction);
+        updateOperations.push(updateEventParticipants(eventId, params.participants, updatedBy, transaction));
     }
 
     // Update event questionnaires
     if (params.questionnaire !== undefined) {
-        await updateEventQuestionaries(eventId, params.questionnaire, updatedBy, transaction);
-    }
-
-    // Recreate post-event reminder if questionnaires were updated or end_date changed
-    // This ensures the reminder is created/updated after questionnaires exist
-    if (params.questionnaire !== undefined || params.end_date !== undefined) {
-        await eventReminderService.createPostEventReminder(event, transaction);
+        updateOperations.push(updateEventQuestionaries(eventId, params.questionnaire, updatedBy, transaction));
     }
 
     // Update event-plan mappings
     if (params.plan_ids !== undefined) {
-        await upsertEventPlanMappings(eventId, params.plan_ids, transaction);
+        updateOperations.push(upsertEventPlanMappings(eventId, params.plan_ids, transaction));
+    }
+
+    // Execute all update operations in parallel
+    if (updateOperations.length > 0) {
+        await Promise.all(updateOperations);
+    }
+
+    // Recreate post-event reminder if questionnaires were updated or end_date changed
+    // This should run after all other operations are complete
+    if (params.questionnaire !== undefined || params.end_date !== undefined) {
+        await eventReminderService.createPostEventReminder(event, transaction);
     }
 
     return event;
@@ -3278,4 +3682,247 @@ export const getUsersByQuestionOption = async (
 
     // Invalid parameters
     return null;
+};
+
+/** Get event attendees with pagination and search */
+export const getEventAttendeesPaginated = async (
+    eventId: string,
+    authUserId: string | null,
+    options: { page?: number; limit?: number; search?: string; rsvp_status?: string[]; order_by?: string; order_direction?: string }
+): Promise<any> => {
+    const { page = 1, limit = 10, search = '', rsvp_status = [], order_by = 'created_at', order_direction = 'DESC' } = options;
+    const offset = (page - 1) * limit;
+
+    // Build where clause for search
+    const searchWhereClause: any = {};
+    if (search) {
+        searchWhereClause[Op.or] = [
+            { '$User.name$': { [Op.like]: `%${search}%` } },
+            { '$User.email$': { [Op.like]: `%${search}%` } },
+            { '$User.mobile$': { [Op.like]: `%${search}%` } },
+            { '$User.username$': { [Op.like]: `%${search}%` } },
+        ];
+    }
+
+    // Get attendees
+    const attendeeWhereClause: any = {
+        event_id: eventId,
+        is_deleted: false,
+        ...searchWhereClause,
+    };
+
+    if (rsvp_status.length > 0) {
+        attendeeWhereClause.rsvp_status = { [Op.in]: rsvp_status };
+    }
+
+    const attendeeResults = await Promise.all([
+        EventAttendee.findAll({
+            where: attendeeWhereClause,
+            include: [
+                {
+                    as: 'user',
+                    model: User,
+                    required: false,
+                    attributes: userAttributes,
+                    where: { is_deleted: false },
+                },
+                {
+                    required: false,
+                    as: 'event_ticket',
+                    model: EventTickets,
+                    attributes: eventTicketsAttributes,
+                },
+            ],
+            attributes: eventAttendeeAttributes,
+            order: [[{ model: User, as: 'user' }, order_by === 'name' ? 'name' : 'created_at', order_direction]],
+            limit,
+            offset,
+        }),
+
+        EventAttendee.count({
+            where: attendeeWhereClause,
+            include: [{
+                model: User,
+                as: 'user',
+                required: false,
+                where: { is_deleted: false },
+            }],
+        }),
+
+        EventAttendee.count({ where: { event_id: eventId, rsvp_status: 'Yes', is_deleted: false } }),
+        EventAttendee.count({ where: { event_id: eventId, rsvp_status: 'Maybe', is_deleted: false } }),
+        EventAttendee.count({ where: { event_id: eventId, rsvp_status: 'No', is_deleted: false } }),
+    ]);
+
+    let attendees = attendeeResults[0];
+    const attendeeCount = attendeeResults[1];
+    const totalYesGuest = attendeeResults[2];
+    const totalMaybeGuest = attendeeResults[3];
+    const totalNoGuest = attendeeResults[4];
+
+    // Add connection status if authenticated user
+    if (authUserId && attendees.length > 0) {
+        // Convert attendees to plain objects
+        const plainAttendees = attendees.map(attendee => attendee.toJSON ? attendee.toJSON() : attendee);
+        
+        // Extract user objects from attendees - ensure we have plain objects
+        const userObjects = plainAttendees
+            .map(a => {
+                const user = a.user;
+                return user && typeof user === 'object' ? user : null;
+            })
+            .filter(user => user && user.id);
+        
+        if (userObjects.length > 0) {
+            try {
+                const usersWithStatus = await userService.addConnectionStatusToUsers(
+                    userObjects,
+                    authUserId,
+                    false
+                );
+                
+                // Create a map of user IDs to connection status
+                const statusMap = new Map(
+                    usersWithStatus.map(user => [user.id, user.connection_status])
+                );
+                
+                // Add connection status to plain attendees (inside user object)
+                plainAttendees.forEach(attendee => {
+                    if (attendee.user_id && statusMap.has(attendee.user_id)) {
+                        attendee.user.connection_status = statusMap.get(attendee.user_id);
+                    }
+                });
+                
+                // Replace original attendees with plain attendees
+                attendees = plainAttendees;
+            } catch (error) {
+                console.error('Error adding connection status to attendees:', error);
+            }
+        }
+    }
+
+    return {
+        data: attendees,
+        pagination: {
+            currentPage: page,
+            totalCount: attendeeCount,
+            totalPages: Math.ceil(attendeeCount / limit),
+        },
+        summary: {
+            total_no_guest: totalNoGuest,
+            total_yes_guest: totalYesGuest,
+            total_maybe_guest: totalMaybeGuest,
+        },
+    };
+};
+
+/** Get event participants (hosts, cohosts, speakers, sponsors, staff) with pagination and search */
+export const getEventParticipantsPaginated = async (
+    eventId: string,
+    authUserId: string | null,
+    options: { page?: number; limit?: number; search?: string; role?: string[]; order_by?: string; order_direction?: string }
+): Promise<any> => {
+    const { page = 1, limit = 10, search = '', role = [], order_by = 'created_at', order_direction = 'DESC' } = options;
+    const offset = (page - 1) * limit;
+
+    // Build where clause for search
+    const searchWhereClause: any = {};
+    if (search) {
+        searchWhereClause[Op.or] = [
+            { '$User.name$': { [Op.like]: `%${search}%` } },
+            { '$User.email$': { [Op.like]: `%${search}%` } },
+            { '$User.mobile$': { [Op.like]: `%${search}%` } },
+            { '$User.username$': { [Op.like]: `%${search}%` } },
+        ];
+    }
+
+    // Get participants (hosts, cohosts, speakers, sponsors, staff)
+    const participantWhereClause: any = {
+        event_id: eventId,
+        is_deleted: false,
+        ...searchWhereClause,
+    };
+
+    // Handle multiple roles - if roles array is empty, return all roles
+    if (role && role.length > 0) participantWhereClause.role = { [Op.in]: role };
+
+    const participantResults = await Promise.all([
+        EventParticipant.findAll({
+            where: participantWhereClause,
+            include: [{
+                as: 'user',
+                model: User,
+                required: false,
+                attributes: userAttributes,
+                where: { is_deleted: false },
+            }],
+            attributes: eventParticipantAttributes,
+            order: [[{ model: User, as: 'user' }, order_by === 'name' ? 'name' : 'created_at', order_direction]],
+            limit,
+            offset,
+        }),
+
+        EventParticipant.count({
+            where: participantWhereClause,
+            include: [{
+                model: User,
+                as: 'user',
+                required: false,
+                where: { is_deleted: false },
+            }],
+        }),
+    ]);
+
+    let participants = participantResults[0];
+    const participantCount = participantResults[1];
+
+    // Add connection status if authenticated user
+    if (authUserId && participants.length > 0) {
+        // Convert participants to plain objects
+        const plainParticipants = participants.map(participant => participant.toJSON ? participant.toJSON() : participant);
+        
+        // Extract user objects from participants - ensure we have plain objects
+        const userObjects = plainParticipants
+            .map(p => {
+                const user = p.user;
+                return user && typeof user === 'object' ? user : null;
+            })
+            .filter(user => user && user.id);
+        
+        if (userObjects.length > 0) {
+            try {
+                const usersWithStatus = await userService.addConnectionStatusToUsers(
+                    userObjects,
+                    authUserId,
+                    false
+                );
+                
+                // Create a map of user IDs to connection status
+                const statusMap = new Map(
+                    usersWithStatus.map(user => [user.id, user.connection_status])
+                );
+                
+                // Add connection status to plain participants (inside user object)
+                plainParticipants.forEach(participant => {
+                    if (participant.user_id && statusMap.has(participant.user_id)) {
+                        participant.user.connection_status = statusMap.get(participant.user_id);
+                    }
+                });
+                
+                // Replace original participants with plain participants
+                participants = plainParticipants;
+            } catch (error) {
+                console.error('Error adding connection status to participants:', error);
+            }
+        }
+    }
+
+    return {
+        data: participants,
+        pagination: {
+            currentPage: page,
+            totalCount: participantCount,
+            totalPages: Math.ceil(participantCount / limit),
+        }
+    };
 };

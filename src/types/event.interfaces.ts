@@ -1,6 +1,7 @@
 import { MediaType, EventParticipantRole, EventPhase, QuestionType, RepeatingFrequency, PromoCodeType, TicketType, RSVPStatus } from './enums';
 
 export type MediaParams = {
+    id?: string;
     media_url: string;
     media_type: MediaType;
     order?: number;
@@ -18,11 +19,13 @@ export type SettingsParams = {
 };
 
 export type EventParticipantParams = {
+    id?: string;
     user_id: string;
     role: EventParticipantRole;
 };
 
 export type PromoCodeParams = {
+    id?: string;
     promo_code: string;
     type: PromoCodeType;
     value: number;
@@ -32,6 +35,7 @@ export type PromoCodeParams = {
 };
 
 export type TicketParams = {
+    id?: string;
     name: string;
     price: number;
     quantity: number;
@@ -49,6 +53,7 @@ export type QuestionOptionParams = {
 };
 
 export type QuestionParams = {
+    id?: string;
     question: string;
     event_phase: EventPhase;
     question_type: QuestionType;

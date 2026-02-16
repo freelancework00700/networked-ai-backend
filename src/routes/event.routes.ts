@@ -7,6 +7,8 @@ import {
     saveEventFeedbackSchema,
     createEventViewSchema,
     updateEventSchema,
+    getEventAttendeesSchema,
+    getEventParticipantsSchema,
     getPreviousEventAttendeesSchema,
     upsertEventParticipantRoleSchema,
 } from '../validations/event.validations';
@@ -33,6 +35,8 @@ import {
     getUsersByQuestionOption,
     upsertEventParticipantRole,
     sendNetworkBroadcast,
+    getEventAttendees,
+    getEventParticipants,
 } from '../controllers/event.controller';
 import { updatePaymentIntent, createPaymentIntent } from '../controllers/stripe.controller';
 import { updatePaymentIntentSchema, createPaymentIntentSchema } from '../validations/stripe.validations';
@@ -89,6 +93,9 @@ eventRouter.get('/ticket-analytics/:ticketId', authenticateToken, getTicketAnaly
 
 // Network broadcast
 eventRouter.post('/network-broadcast', authenticateToken, validateSchema(networkBroadcastSchema, 'body'), sendNetworkBroadcast);
+
+eventRouter.get('/attendees/:value', optionalAuthenticateToken, validateSchema(getEventAttendeesSchema, 'query'), getEventAttendees);
+eventRouter.get('/participants/:value', optionalAuthenticateToken, validateSchema(getEventParticipantsSchema, 'query'), getEventParticipants);
 
 export default eventRouter;
 
