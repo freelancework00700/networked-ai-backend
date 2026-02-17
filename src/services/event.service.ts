@@ -2039,6 +2039,24 @@ export const reportEvent = async (
     });
 };
 
+/** Check if user has already submitted feedback for an event */
+export const checkUserAlreadySubmittedFeedback = async (
+    eventId: string,
+    userId: string,
+    transaction?: Transaction
+): Promise<boolean> => {
+    const existingFeedback = await EventFeedback.findOne({
+        where: {
+            user_id: userId,
+            event_id: eventId,
+            is_deleted: false,
+        },
+        transaction,
+    });
+
+    return !!existingFeedback;
+};
+
 /** Save event feedback */
 export const saveEventFeedback = async (
     eventId: string,

@@ -613,6 +613,13 @@ export const saveEventFeedback = async (req: Request, res: Response, next: NextF
             return sendBadRequestResponse(res, responseMessages.event.feedbackDataRequired);
         }
 
+        // Check if user has already submitted feedback for this event
+        const hasExistingFeedback = await eventService.checkUserAlreadySubmittedFeedback(id as string, authUserId, transaction);
+        if (hasExistingFeedback) {
+            await transaction.rollback();
+            return sendSuccessResponse(res, 'Feedback already submitted', { content: [] });
+        }
+
         const feedback = await eventService.saveEventFeedback(
             id as string,
             authUserId,
