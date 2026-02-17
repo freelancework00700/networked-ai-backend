@@ -2708,20 +2708,86 @@ export const getAllEventsPaginated = async (
             whereClause[Op.and] = coordinateConditions;
         }
 
-        // Build order clause
-        if (orderBy === 'distance') {
-            order.push([Sequelize.literal('distance'), orderDirection as 'ASC' | 'DESC']);
+        // Custom ordering: upcoming events first (closest to current date), then older events
+        const now = new Date();
+        
+        // Create a custom order that prioritizes upcoming events
+        if (filters?.is_recommended) {
+            // For recommended events, use the custom ordering
+            order = [
+                [
+                    Sequelize.literal(`CASE 
+                        WHEN start_date >= '${now.toISOString()}' THEN start_date 
+                        ELSE '9999-12-31'
+                    END`), 'ASC'
+                ],
+                ['start_date', 'ASC']
+            ];
+        } else if (filters?.latitude && filters?.longitude && filters?.radius) {
+            // For location-based search, apply custom ordering with distance
+            if (orderBy === 'distance') {
+                order = [
+                    [
+                        Sequelize.literal(`CASE 
+                            WHEN start_date >= '${now.toISOString()}' THEN start_date 
+                            ELSE '9999-12-31'
+                        END`), 'ASC'
+                    ],
+                    [Sequelize.literal('distance'), orderDirection as 'ASC' | 'DESC']
+                ];
+            } else {
+                order = [
+                    [
+                        Sequelize.literal(`CASE 
+                            WHEN start_date >= '${now.toISOString()}' THEN start_date 
+                            ELSE '9999-12-31'
+                        END`), 'ASC'
+                    ],
+                    [orderBy, orderDirection as 'ASC' | 'DESC'],
+                    [Sequelize.literal('distance'), 'ASC']
+                ];
+            }
         } else {
-            order.push([orderBy, orderDirection as 'ASC' | 'DESC']);
-            order.push([Sequelize.literal('distance'), 'ASC']);
+            // Default custom ordering
+            order = [
+                [
+                    Sequelize.literal(`CASE 
+                        WHEN start_date >= '${now.toISOString()}' THEN start_date 
+                        ELSE '9999-12-31'
+                    END`), 'ASC'
+                ],
+                [orderBy, orderDirection as 'ASC' | 'DESC']
+            ];
         }
-    } else {
-        order = [[orderBy, orderDirection as 'ASC' | 'DESC']];
-    }
 
-    // Override order for recommended events to match recommendations (start_date ASC)
-    if (filters?.is_recommended) {
-        order = [['start_date', 'ASC']];
+    } else {
+        // Default custom ordering (when not using location-based search)
+        const now = new Date();
+        
+        // Create a custom order that prioritizes upcoming events
+        if (filters?.is_recommended) {
+            // For recommended events, use the custom ordering
+            order = [
+                [
+                    Sequelize.literal(`CASE 
+                        WHEN start_date >= '${now.toISOString()}' THEN start_date 
+                        ELSE '9999-12-31'
+                    END`), 'ASC'
+                ],
+                ['start_date', 'ASC']
+            ];
+        } else {
+            // Default custom ordering
+            order = [
+                [
+                    Sequelize.literal(`CASE 
+                        WHEN start_date >= '${now.toISOString()}' THEN start_date 
+                        ELSE '9999-12-31'
+                    END`), 'ASC'
+                ],
+                [orderBy, orderDirection as 'ASC' | 'DESC']
+            ];
+        }
     }
 
     // Filter by user_id and roles (works with all other filters)
