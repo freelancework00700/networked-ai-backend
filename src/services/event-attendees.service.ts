@@ -1,5 +1,5 @@
 import { Op, Sequelize, Transaction, FindAndCountOptions, WhereOptions } from "sequelize";
-import { EventAttendee, EventTickets, EventPromoCode, User, Event } from "../models";
+import { EventAttendee, EventTickets, EventPromoCode, User, Event, EventParticipant } from "../models";
 import { ContentType, RSVPStatus, TicketType, ConnectionStatus, EventParticipantRole } from "../types/enums";
 import { BulkEventAttendeeParams, eventAttendeeParams } from "../types/event.interfaces";
 import gamificationCategoryService from "./gamification-category.service";
@@ -13,6 +13,49 @@ import emailService from "./email.service";
 import * as eventService from "./event.service";
 import notificationService from "./notification.service";
 import { EventAttendeeCounts } from "../types/event-attendees.interface";
+
+/** Check if user is event host (creator or HOST/CO_HOST participant) */
+export const isEventHost = async (userId: string, eventId: string, transaction?: Transaction): Promise<boolean> => {
+    const event = await Event.findOne({
+        transaction,
+        attributes: ['created_by'],
+        where: { id: eventId, is_deleted: false },
+    });
+    if (!event) return false;
+
+    // Check if user is event creator
+    if (event.created_by === userId) return true;
+
+    // Check if user is HOST or CO_HOST participant
+    const participant = await EventParticipant.findOne({
+        where: {
+            user_id: userId,
+            event_id: eventId,
+            is_deleted: false,
+            role: { [Op.in]: [EventParticipantRole.HOST, EventParticipantRole.CO_HOST] },
+        },
+        transaction,
+    });
+
+    return !!participant;
+};
+
+/** Check if user is already attending an event (main attendee record, not guests) */
+export const checkUserAlreadyAttending = async (
+    eventId: string,
+    userId: string,
+    transaction?: Transaction
+): Promise<boolean> => {
+    const existingAttendee = await EventAttendee.findOne({
+        where: {
+            user_id: userId,
+            is_deleted: false,
+            event_id: eventId,
+        },
+        transaction,
+    });
+    return !!existingAttendee;
+};
 
 /** Event attendees - create or manage attendees */
 const eventAttendees = async (
@@ -595,6 +638,7 @@ const getEventAttendeesWithFilters = async (
 };
 
 export default {
+    isEventHost,
     checkInAttendee,
     uncheckInAttendee,
     updateEventAttendee,
@@ -602,5 +646,6 @@ export default {
     getEventAttendeeCounts,
     softDeleteEventAttendee,
     createBulkEventAttendees,
+    checkUserAlreadyAttending,
     getEventAttendeesWithFilters
 };

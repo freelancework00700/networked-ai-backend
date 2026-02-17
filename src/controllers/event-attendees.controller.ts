@@ -10,7 +10,7 @@ import userGamificationCategoryBadgesService from "../services/user-gamification
 import { Event, EventAttendee } from "../models";
 import loggerService from "../utils/logger.service";
 import { responseMessages } from "../utils/response-message.service";
-import { sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse, sendUnauthorizedResponse } from "../utils/response.service";
+import { sendConflictErrorResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse, sendUnauthorizedResponse } from "../utils/response.service";
 import { ContentType, RSVPStatus, TicketType } from "../types/enums";
 import { emitAttendeeCheckInUpdate } from "../socket/event";
 
@@ -20,6 +20,20 @@ export const createEventAttendee = async (req: Request, res: Response, next: Nex
     try {
         const authUserId = res.locals.auth?.user?.id ?? null;
         const { event_id, stripe_payment_intent_id, attendees } = req.body;
+
+        // Check if user is already attending this event
+        const isAlreadyAttending = await eventAttendeesService.checkUserAlreadyAttending(event_id, authUserId, transaction);
+        if (isAlreadyAttending) {
+            await transaction.rollback();
+            return sendConflictErrorResponse(res, 'User is already attending this event');
+        }
+
+        // Check if user is event host or co-host (they cannot RSVP to their own event)
+        const isEventHost = await eventAttendeesService.isEventHost(event_id, authUserId, transaction);
+        if (isEventHost) {
+            await transaction.rollback();
+            return sendConflictErrorResponse(res, 'Event hosts and co-hosts cannot RSVP to their own event');
+        }
 
         // If stripe_payment_intent_id is provided, look up the transaction
         let transactionId: string | null = null;
