@@ -97,7 +97,7 @@ export const responseMessages = {
         verifyCodeFailed: 'Failed to verify code.',
         invalidPassword: 'Invalid password.',
         invalidEmailOrPassword: 'Invalid email or password.',
-        passwordNotSet: 'Password not set for this account. Please use social login or set a password.',
+        passwordNotSet: 'Password not set for your account. Please use "Forgot Password" to set your password.',
         accountDeleted: 'This account has been deleted.',
         invalidOrExpiredOTP: 'Invalid or expired OTP.',
         userNotFoundWithMobile: 'User not found with this mobile number.',

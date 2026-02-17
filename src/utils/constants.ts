@@ -114,7 +114,7 @@ export const responseMessages = {
     invalidOrExpiredOTP: 'Invalid or expired OTP.',
     userNotFoundWithMobile: 'User not found with this mobile number.',
     invalidEmailOrPassword: 'Invalid email or password.',
-    passwordNotSet: 'Password not set for this account. Please use social login or set a password.',
+    passwordNotSet: 'Password not set for your account. Please use "Forgot Password" to set your password.',
     invalidLoginCredentials: 'Invalid login credentials. Provide either firebase_token, or mobile+otp, or email+password.',
     failedToSendVerification: 'Failed to send verification code.',
     verificationCodeSent: 'Verification code sent successfully.',
