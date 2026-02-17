@@ -302,6 +302,7 @@ export const updateEventSchema = {
                         items: {
                             type: 'object',
                             properties: {
+                                id: { type: 'string', format: 'uuid' },
                                 option: { type: 'string', minLength: 1 },
                                 order: { type: ['integer', 'null'], minimum: 0 }
                             },
