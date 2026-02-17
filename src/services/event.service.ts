@@ -3721,10 +3721,10 @@ export const getEventAttendeesPaginated = async (
     const searchWhereClause: any = {};
     if (search) {
         searchWhereClause[Op.or] = [
-            { '$User.name$': { [Op.like]: `%${search}%` } },
-            { '$User.email$': { [Op.like]: `%${search}%` } },
-            { '$User.mobile$': { [Op.like]: `%${search}%` } },
-            { '$User.username$': { [Op.like]: `%${search}%` } },
+            { '$user.name$': { [Op.like]: `%${search}%` } },
+            { '$user.email$': { [Op.like]: `%${search}%` } },
+            { '$user.mobile$': { [Op.like]: `%${search}%` } },
+            { '$user.username$': { [Op.like]: `%${search}%` } },
         ];
     }
 
@@ -3853,10 +3853,10 @@ export const getEventParticipantsPaginated = async (
     const searchWhereClause: any = {};
     if (search) {
         searchWhereClause[Op.or] = [
-            { '$User.name$': { [Op.like]: `%${search}%` } },
-            { '$User.email$': { [Op.like]: `%${search}%` } },
-            { '$User.mobile$': { [Op.like]: `%${search}%` } },
-            { '$User.username$': { [Op.like]: `%${search}%` } },
+            { '$user.name$': { [Op.like]: `%${search}%` } },
+            { '$user.email$': { [Op.like]: `%${search}%` } },
+            { '$user.mobile$': { [Op.like]: `%${search}%` } },
+            { '$user.username$': { [Op.like]: `%${search}%` } },
         ];
     }
 
