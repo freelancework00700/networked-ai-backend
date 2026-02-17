@@ -48,6 +48,7 @@ export type TicketParams = {
 };
 
 export type QuestionOptionParams = {
+    id?: string;
     option: string;
     order?: number;
 };

@@ -928,6 +928,12 @@ export const createPaymentIntent = async (
             return sendConflictErrorResponse(res, 'User is already attending this event');
         }
 
+        // Check if user is event host or co-host (they cannot RSVP to their own event)
+        const isEventHost = await eventAttendeesService.isEventHost(event_id, user.id);
+        if (isEventHost) {
+            return sendConflictErrorResponse(res, 'Event hosts and co-hosts cannot RSVP to their own event');
+        }
+
         // Validate that total is not less than subtotal
         if (total < subtotal) {
             return sendBadRequestResponse(res, responseMessages.stripe.totalLessThanSubtotal);

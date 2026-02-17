@@ -1037,30 +1037,64 @@ const updateEventQuestionaries = async (
                 }
             );
 
-            // Handle question options - soft delete existing options for this question
-            await EventQuestionOption.update(
-                {
-                    is_deleted: true,
-                    deleted_at: new Date(),
-                    deleted_by: updatedBy,
-                },
-                {
-                    where: { question_id: question.id, is_deleted: false },
-                    transaction,
-                }
+            // Handle question options - upsert by option id, create if no id, soft delete removed
+            const existingOptions = await EventQuestionOption.findAll({
+                attributes: ['id'],
+                where: { question_id: question.id, is_deleted: false },
+                transaction,
+            });
+
+            const existingOptionIds = new Set(existingOptions.map((o) => o.id));
+            const incomingOptionIds = new Set(
+                (question.options ?? []).filter((o) => o.id).map((o) => o.id as string)
             );
 
-            // Create new options if provided
+            // Update existing options
             if (question.options && question.options.length > 0) {
-                const optionRows = question.options.map((option: QuestionOptionParams) => ({
+                for (const option of question.options) {
+                    if (option.id && existingOptionIds.has(option.id)) {
+                        await EventQuestionOption.update(
+                            {
+                                option: option.option,
+                                order: option.order ?? 0,
+                                updated_by: updatedBy,
+                            },
+                            {
+                                where: { id: option.id, question_id: question.id, is_deleted: false },
+                                transaction,
+                            }
+                        );
+                    }
+                }
+            }
+
+            // Create new options (those without id)
+            const newOptions = (question.options ?? []).filter((o) => !o.id);
+            if (newOptions.length > 0) {
+                const optionRows = newOptions.map((option: QuestionOptionParams) => ({
                     question_id: question.id,
                     option: option.option,
-                    order: option.order,
+                    order: option.order ?? 0,
                     created_by: updatedBy,
-                    updated_by: updatedBy,
                 }));
 
                 await EventQuestionOption.bulkCreate(optionRows, { transaction });
+            }
+
+            // Soft delete options that are not in the incoming list
+            const optionsToDelete = [...existingOptionIds].filter((id) => !incomingOptionIds.has(id));
+            if (optionsToDelete.length > 0) {
+                await EventQuestionOption.update(
+                    {
+                        is_deleted: true,
+                        deleted_at: new Date(),
+                        deleted_by: updatedBy,
+                    },
+                    {
+                        where: { id: { [Op.in]: optionsToDelete }, question_id: question.id, is_deleted: false },
+                        transaction,
+                    }
+                );
             }
         }
     }
