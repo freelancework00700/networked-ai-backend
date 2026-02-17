@@ -85,11 +85,13 @@ export const updateEvent = async (req: Request, res: Response, next: NextFunctio
             return sendNotFoundResponse(res, responseMessages.event.notFoundSingle);
         }
 
+        const { notify, ...restBody } = req.body as any;
+
         const params: CreateEventParams = {
-            ...req.body,
+            ...restBody,
         };
 
-        const event = await eventService.updateEvent(id as string, params, authUserId, transaction);
+        const event = await eventService.updateEvent(id as string, params, authUserId, transaction, { notify });
         if (!event) {
             await transaction.rollback();
             return sendBadRequestResponse(res, responseMessages.event.failedToUpdate);

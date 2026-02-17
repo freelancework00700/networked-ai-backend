@@ -2185,7 +2185,8 @@ export const updateEvent = async (
     eventId: string,
     params: CreateEventParams,
     updatedBy: string,
-    transaction: Transaction
+    transaction: Transaction,
+    updateOptions?: { notify?: boolean }
 ): Promise<Event> => {
     // Find existing event
     const event = await Event.findOne({
@@ -2253,7 +2254,7 @@ export const updateEvent = async (
             image_url,
             updated_by: updatedBy,
         },
-        { transaction }
+        { transaction, ...updateOptions }
     );
 
     // Prepare all update operations

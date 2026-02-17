@@ -169,6 +169,7 @@ export const createEventSchema = {
 export const updateEventSchema = {
     type: 'object',
     properties: {
+        notify: { type: 'boolean' },
         title: { type: 'string', minLength: 1, maxLength: 255 },
         description: { type: ['string', 'null'] },
         address: { type: ['string', 'null'], maxLength: 255 },

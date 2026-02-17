@@ -282,6 +282,7 @@ export class Event extends Model {
 
         Event.afterUpdate(async (event: Event, options: any) => {
             try {
+                const notify = options?.notify !== false;
                 const currentIsDeleted = event.getDataValue('is_deleted');
                 const previousIsDeleted = (event as any)._previousDataValues?.is_deleted;
 
@@ -309,7 +310,7 @@ export class Event extends Model {
                     const importantFields = ['title', 'description', 'start_date', 'end_date', 'address'];
                     const meaningfulFields = changedFields.filter((field: string) => importantFields.includes(field));
 
-                    if (meaningfulFields.length > 0) {
+                    if (meaningfulFields.length > 0 && notify) {
                         await emailService.sendEventUpdatedEmail(event, meaningfulFields, options.transaction);
                         await smsService.sendEventUpdatedSms(event, meaningfulFields, options.transaction);
                         await notificationService.sendEventUpdatedNotification(event, meaningfulFields, options.transaction);
