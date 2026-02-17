@@ -169,6 +169,7 @@ export const createEventSchema = {
 export const updateEventSchema = {
     type: 'object',
     properties: {
+        notify: { type: 'boolean' },
         title: { type: 'string', minLength: 1, maxLength: 255 },
         description: { type: ['string', 'null'] },
         address: { type: ['string', 'null'], maxLength: 255 },
@@ -214,6 +215,7 @@ export const updateEventSchema = {
             items: {
                 type: 'object',
                 properties: {
+                    id: { type: 'string', format: 'uuid' },
                     media_url: { type: 'string', minLength: 1, maxLength: 255 },
                     media_type: { type: 'string', enum: Object.values(MediaType) },
                     order: { type: ['integer', 'null'], minimum: 0 }
@@ -229,6 +231,7 @@ export const updateEventSchema = {
             items: {
                 type: 'object',
                 properties: {
+                    id: { type: 'string', format: 'uuid' },
                     name: { type: 'string', minLength: 1, maxLength: 100 },
                     price: { type: 'number', minimum: 0 },
                     quantity: { type: 'integer', minimum: 0 },
@@ -250,6 +253,7 @@ export const updateEventSchema = {
             items: {
                 type: 'object',
                 properties: {
+                    id: { type: 'string', format: 'uuid' },
                     promo_code: { type: 'string', minLength: 1, maxLength: 100 },
                     type: { type: 'string', enum: Object.values(PromoCodeType) },
                     value: { type: 'number', minimum: 0 },
@@ -268,6 +272,7 @@ export const updateEventSchema = {
             items: {
                 type: 'object',
                 properties: {
+                    id: { type: 'string', format: 'uuid' },
                     user_id: { type: 'string', minLength: 1 },
                     role: { type: 'string', enum: Object.values(EventParticipantRole) }
                 },
@@ -282,6 +287,7 @@ export const updateEventSchema = {
             items: {
                 type: 'object',
                 properties: {
+                    id: { type: 'string', format: 'uuid' },
                     question: { type: 'string', minLength: 1 },
                     event_phase: { type: 'string', enum: Object.values(EventPhase) },
                     question_type: { type: 'string', enum: Object.values(QuestionType) },
@@ -382,4 +388,40 @@ export const getPreviousEventAttendeesSchema = {
         event_id: { type: 'string' }
     },
     additionalProperties: false
+};
+
+/** Schema to validate query parameters for getting event attendees. */
+export const getEventAttendeesSchema = {
+    type: 'object',
+    properties: {
+        page: { type: 'string', minLength: 1 },
+        limit: { type: 'string', minLength: 1 },
+        search: { type: 'string', maxLength: 255 },
+        rsvp_status: {
+            type: 'string',
+            pattern: '^(Yes|Maybe|No)(,(Yes|Maybe|No))*$',
+            description: 'Comma-separated list of RSVP statuses (Yes,Maybe,No)'
+        },
+        order_by: { type: 'string', enum: ['name', 'created_at'], default: 'created_at' },
+        order_direction: { type: 'string', enum: ['ASC', 'DESC'], default: 'DESC' },
+    },
+    additionalProperties: false,
+};
+
+/** Schema to validate query parameters for getting event participants. */
+export const getEventParticipantsSchema = {
+    type: 'object',
+    properties: {
+        page: { type: 'string', minLength: 1 },
+        limit: { type: 'string', minLength: 1 },
+        search: { type: 'string', maxLength: 255 },
+        role: { 
+            type: 'string', 
+            pattern: '^(Host|CoHost|Speaker|Sponsor|Staff)(,(Host|CoHost|Speaker|Sponsor|Staff))*$',
+            description: 'Comma-separated list of roles (Host,CoHost,Speaker,Sponsor,Staff)'
+        },
+        order_by: { type: 'string', enum: ['name', 'role', 'created_at'], default: 'created_at' },
+        order_direction: { type: 'string', enum: ['ASC', 'DESC'], default: 'DESC' },
+    },
+    additionalProperties: false,
 };

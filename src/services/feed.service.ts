@@ -6,7 +6,6 @@ import FeedMention from '../models/feed-mention.model';
 import { Event, Feed, User, UserNetwork } from '../models/index';
 import { MediaParams } from '../types/event.interfaces';
 import { CreateFeedParams, FeedEventParams } from '../types/feed.interfaces';
-import { includeDetails } from './event.service';
 
 const eventAttributes = ['id', 'title', 'slug', 'description', 'address', 'latitude', 'longitude', 'is_paid_event', 'start_date', 'end_date', 'is_public', 'thumbnail_url', 'image_url'];
 

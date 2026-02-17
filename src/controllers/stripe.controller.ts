@@ -10,12 +10,13 @@ import stripePriceService from '../services/stripe-price.service';
 import subscriptionService from '../services/subscription.service';
 import { responseMessages } from '../utils/response-message.service';
 import stripeProductService from '../services/stripe-product.service';
+import eventAttendeesService from '../services/event-attendees.service';
 import { User, Subscription, Event, EventAttendee } from '../models/index';
 import platformSubscriptionService from '../services/platform-subscription.service';
 import platformStripeProductService from '../services/platform-stripe-product.service';
 import stripeService, { getAccountStatus, getSubscriptionStatus } from '../services/stripe.service';
 import { StripeAccountStatus, SubscriptionStatus, TransactionStatus, TransactionType } from '../types/enums';
-import { sendBadRequestResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } from '../utils/response.service';
+import { sendBadRequestResponse, sendConflictErrorResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } from '../utils/response.service';
 
 /**
  * POST API: Handle Stripe webhook events for own account (products, prices)
@@ -920,6 +921,12 @@ export const createPaymentIntent = async (
     try {
         const user = res.locals.auth?.user;
         const { event_id, subtotal, total } = req.body;
+
+        // Check if user is already attending this event
+        const isAlreadyAttending = await eventAttendeesService.checkUserAlreadyAttending(event_id, user.id);
+        if (isAlreadyAttending) {
+            return sendConflictErrorResponse(res, 'User is already attending this event');
+        }
 
         // Validate that total is not less than subtotal
         if (total < subtotal) {

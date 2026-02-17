@@ -62,6 +62,7 @@ import Tag from './tag.model';
 import Segment from './segment.model';
 import Customer from './customer.model';
 import CustomerTag from './customer-tag.model';
+import ServiceSettings from './service-settings.model';
 import CustomerSegment from './customer-segment.model';
 import PlatformStripePrice from './platform-stripe-price.model';
 import PlatformStripeProduct from './platform-stripe-product.model';
@@ -138,6 +139,7 @@ export const initMySQLModels = (connection: Sequelize): void => {
     Segment.initModel(connection);
     Customer.initModel(connection);
     CustomerTag.initModel(connection);
+    ServiceSettings.initModel(connection);
     CustomerSegment.initModel(connection);
     PlatformStripePrice.initModel(connection);
     PlatformStripeProduct.initModel(connection);
@@ -210,6 +212,7 @@ export const initMySQLModels = (connection: Sequelize): void => {
     Customer.initAssociations();
     CustomerTag.initAssociations();
     CustomerSegment.initAssociations();
+    ServiceSettings.initAssociations();
     PlatformStripePrice.initAssociations();
     PlatformStripeProduct.initAssociations();
     PlatformUserFeatureUsage.initAssociations();
@@ -280,6 +283,7 @@ export const initMySQLModels = (connection: Sequelize): void => {
     Segment.initHooks();
     Customer.initHooks();
     CustomerTag.initHooks();
+    ServiceSettings.initHooks();
     CustomerSegment.initHooks();
     PlatformStripePrice.initHooks();
     PlatformStripeProduct.initHooks();
@@ -315,6 +319,7 @@ export {
     StripeProduct, StripePrice, StripeProductEvent, Subscription, Transaction,
     ChatRoom, ChatMessage, Email, Sms, Notification, EventReminder,
     Tag, Segment, Customer, CustomerTag, CustomerSegment,
+    ServiceSettings,
     PlatformStripePrice,
     PlatformStripeProduct,
     PlatformUserFeatureUsage,

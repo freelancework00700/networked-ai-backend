@@ -1,6 +1,7 @@
 import twilio from 'twilio';
-import loggerService from './logger.service';
 import env from './validate-env';
+import loggerService from './logger.service';
+import { isSmsEnabled } from '../services/service-settings.service';
 
 const client = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTHTOKEN);
 
@@ -11,6 +12,13 @@ const client = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTHTOKEN);
  */
 export const sendSms = async (to: string, body: string) => {
     try {
+        // Check if SMS service is enabled
+        const smsEnabled = await isSmsEnabled();
+        if (!smsEnabled) {
+            loggerService.info(`SMS service is disabled. Skipping SMS to ${to}`);
+            return null;
+        }
+
         const message = await client.messages.create({
             from: env.TWILIO_PHONE_NUMBER,
             to,
