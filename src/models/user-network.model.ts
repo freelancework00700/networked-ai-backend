@@ -5,6 +5,7 @@ import loggerService from '../utils/logger.service';
 import emailService from '../services/email.service';
 import { DataTypes, Model, Sequelize } from 'sequelize';
 import notificationService from '../services/notification.service';
+const DEFAULT_PROFILE_IMAGE = 'https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fnetworked.png?alt=media&token=f5cba863-5c90-4a4f-bd9d-132c42f21841';
 
 export class UserNetwork extends Model {
     public id!: string;
@@ -100,7 +101,7 @@ export class UserNetwork extends Model {
                         {
                             model: User,
                             as: 'created_by_user',
-                            attributes: ['id', 'name', 'username'],
+                            attributes: ['id', 'name', 'username', 'image_url'],
                         },
                     ],
                     transaction: options?.transaction,
@@ -115,6 +116,7 @@ export class UserNetwork extends Model {
                         accepter?.name || 'User',
                         accepter?.username || '',
                         createdBy,
+                        accepter?.image_url || DEFAULT_PROFILE_IMAGE || '',
                         options?.transaction
                     );
                 }

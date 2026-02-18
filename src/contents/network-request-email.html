@@ -64,6 +64,14 @@
         .event-footer a:hover {
             color: #c2ac45;
         }
+        .profile-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 16px;
+            object-fit: contain;
+            border: 3px solid #F5BC61;
+        }
     </style>
 </head>
 <body>
@@ -74,8 +82,8 @@
 
         <div class="content">
             <div style="text-align:center; padding: 40px 0;">
-                <!-- Envelope Icon -->
-                <img src="https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fnetworked.png?alt=media&token=f5cba863-5c90-4a4f-bd9d-132c42f21841" alt="Envelope" style="width:60px; margin-bottom:24px;" />
+                <!-- Profile Image -->
+                <img src="{{senderProfileImage}}" class="profile-image" />
 
                 <!-- Main Message -->
                 <div style="font-size:22px; font-weight:bold; margin-bottom:16px; color:#1c1c1e;">
@@ -86,13 +94,13 @@
                 </div>
 
                 <!-- Accept Button -->
-                <a href="https://app.net-worked.ai/{{senderUsername}}" class="button">Accept Request</a>
+                <a href="{{front_url}}/{{senderUsername}}" class="button">Accept Request</a>
             </div>
         </div>
 
         <div class="event-footer">
             <div>
-                <p>For more information, visit our <a href="https://app.net-worked.ai/{{senderUsername}}">profile page</a>.</p>  
+                <p>For more information, visit our <a href="{{front_url}}/{{senderUsername}}">profile page</a>.</p>  
             </div>
 
             <div>

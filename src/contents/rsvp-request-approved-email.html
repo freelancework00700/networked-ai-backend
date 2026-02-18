@@ -25,11 +25,11 @@
         <div class="content">
             <h2>Hi {{requesterName}},</h2>
             <p>Your RSVP request for <strong>{{eventTitle}}</strong> has been approved by <strong>{{hostName}}</strong>.</p>
-            <a href="https://app.net-worked.ai/event/{{slug}}" class="button">View Event</a>
+            <a href="{{front_url}}/event/{{slug}}" class="button">View Event</a>
         </div>
 
         <div class="event-footer">
-            <p>For more information, visit the <a href="https://app.net-worked.ai/event/{{slug}}">event page</a>.</p>
+            <p>For more information, visit the <a href="{{front_url}}/event/{{slug}}">event page</a>.</p>
             <p>© {{year}} Networked, LLC. All Rights Reserved</p>
         </div>
     </div>
