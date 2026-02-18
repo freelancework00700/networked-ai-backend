@@ -494,23 +494,6 @@ const getEventAttendeesWithFilters = async (
     const { event_id, rsvp_status, is_checked_in, ticket_type, is_connected, search } = filters;
     const offset = (Number(page) - 1) * Number(limit);
 
-    // Build search conditions for EventAttendee fields
-    let attendeeSearchConditions: any = {};
-    if (search && search.trim().length > 0) {
-        const searchPattern = `%${search.trim()}%`;
-        attendeeSearchConditions = {
-            [Op.or]: [
-                // Search in EventAttendee.name for additional guests (when parent_user_id is not null)
-                {
-                    [Op.and]: [
-                        { parent_user_id: { [Op.ne]: null } },
-                        { name: { [Op.like]: searchPattern } }
-                    ]
-                }
-            ]
-        };
-    }
-
     const where: WhereOptions = {
         event_id,
         is_deleted: false,
@@ -523,29 +506,33 @@ const getEventAttendeesWithFilters = async (
         where.is_checked_in = is_checked_in;
     }
 
-    // Add attendee search conditions if search is provided
-    if (Object.keys(attendeeSearchConditions).length > 0) {
-        const existingConditions = { ...where };
+    // Build unified search conditions
+    if (search && search.trim().length > 0) {
+        const searchPattern = `%${search.trim()}%`;
         
-        // Combine existing conditions with search conditions
+        // Combine all search conditions in a single OR clause
+        const searchConditions = [
+            // Search in user fields
+            { '$user.name$': { [Op.like]: searchPattern } },
+            { '$user.username$': { [Op.like]: searchPattern } },
+            { '$user.email$': { [Op.like]: searchPattern } },
+            // Search in EventAttendee.name for additional guests (when parent_user_id is not null)
+            {
+                [Op.and]: [
+                    { parent_user_id: { [Op.ne]: null } },
+                    { name: { [Op.like]: searchPattern } }
+                ]
+            }
+        ];
+        
+        // Add search conditions to where clause
         Object.assign(where, {
-            [Op.and]: [
-                existingConditions,
-                ...attendeeSearchConditions[Op.or]
-            ]
+            [Op.or]: searchConditions
         });
     }
 
-    // Build optional user search filter
+    // Build user filter (without search, since search is now in main where clause)
     const userWhere: any = { is_deleted: false };
-    if (search && search.trim().length > 0) {
-        const searchPattern = `%${search.trim()}%`;
-        userWhere[Op.or] = [
-            { name: { [Op.like]: searchPattern } },
-            { username: { [Op.like]: searchPattern } },
-            { email: { [Op.like]: searchPattern } },
-        ];
-    }
 
     const attendeeIncludes = [
         {
