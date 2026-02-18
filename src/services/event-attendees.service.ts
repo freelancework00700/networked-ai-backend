@@ -494,6 +494,23 @@ const getEventAttendeesWithFilters = async (
     const { event_id, rsvp_status, is_checked_in, ticket_type, is_connected, search } = filters;
     const offset = (Number(page) - 1) * Number(limit);
 
+    // Build search conditions for EventAttendee fields
+    let attendeeSearchConditions: any = {};
+    if (search && search.trim().length > 0) {
+        const searchPattern = `%${search.trim()}%`;
+        attendeeSearchConditions = {
+            [Op.or]: [
+                // Search in EventAttendee.name for additional guests (when parent_user_id is not null)
+                {
+                    [Op.and]: [
+                        { parent_user_id: { [Op.ne]: null } },
+                        { name: { [Op.like]: searchPattern } }
+                    ]
+                }
+            ]
+        };
+    }
+
     const where: WhereOptions = {
         event_id,
         is_deleted: false,
@@ -504,6 +521,19 @@ const getEventAttendeesWithFilters = async (
     }
     if (typeof is_checked_in === 'boolean') {
         where.is_checked_in = is_checked_in;
+    }
+
+    // Add attendee search conditions if search is provided
+    if (Object.keys(attendeeSearchConditions).length > 0) {
+        const existingConditions = { ...where };
+        
+        // Combine existing conditions with search conditions
+        Object.assign(where, {
+            [Op.and]: [
+                existingConditions,
+                ...attendeeSearchConditions[Op.or]
+            ]
+        });
     }
 
     // Build optional user search filter

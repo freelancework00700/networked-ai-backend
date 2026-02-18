@@ -3857,6 +3857,13 @@ export const getEventAttendeesPaginated = async (
             { '$user.email$': { [Op.like]: `%${search}%` } },
             { '$user.mobile$': { [Op.like]: `%${search}%` } },
             { '$user.username$': { [Op.like]: `%${search}%` } },
+            // Search in EventAttendee.name for additional guests (when parent_user_id is not null)
+            {
+                [Op.and]: [
+                    { parent_user_id: { [Op.ne]: null } },
+                    { name: { [Op.like]: `%${search}%` } }
+                ]
+            }
         ];
     }
 
