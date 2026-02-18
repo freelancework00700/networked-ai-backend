@@ -160,6 +160,7 @@ export const sendRsvpConfirmationEmailToGuest = async (event: Event, host: User,
             .replace(/{{dateTime}}/g, dateTime)
             .replace(/{{eventImage}}/g, eventImage)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{mapsUrl}}/g, mapsUrl.toString())
             .replace(/{{location}}/g, locationText || '')
             .replace(/{{title}}/g, event.title || 'Event')
@@ -226,6 +227,7 @@ export const sendRsvpConfirmationEmailToHost = async (event: Event, host: User, 
         html = html
             .replace(/{{tierLines}}/g, tierLines)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{hostName}}/g, host.name || 'Host')
             .replace(/{{eventTitle}}/g, event.title || 'Event')
             .replace(/{{userEmailSection}}/g, userEmailSection)
@@ -257,6 +259,7 @@ export const sendRsvpRequestEmailToHost = async (event: Event, hostEmail: string
         html = html
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{requesterName}}/g, requesterName)
             .replace(/{{eventTitle}}/g, event.title || 'Event')
             .replace(/{{year}}/g, new Date().getFullYear().toString());
@@ -287,6 +290,7 @@ export const sendRsvpRequestApprovedEmailToRequester = async (event: Event, requ
         html = html
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{requesterName}}/g, requesterName)
             .replace(/{{eventTitle}}/g, event.title || 'Event')
             .replace(/{{year}}/g, new Date().getFullYear().toString());
@@ -317,6 +321,7 @@ export const sendRsvpRequestRejectedEmailToRequester = async (event: Event, requ
         html = html
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{requesterName}}/g, requesterName)
             .replace(/{{eventTitle}}/g, event.title || 'Event')
             .replace(/{{year}}/g, new Date().getFullYear().toString());
@@ -339,15 +344,17 @@ export const sendRsvpRequestRejectedEmailToRequester = async (event: Event, requ
     }
 };
 
-export const sendNetworkRequestAcceptedEmail = async (receiverEmail: string, accepterName: string, accepterUsername: string, accepterId: string, transaction?: Transaction): Promise<Email> => {
+export const sendNetworkRequestAcceptedEmail = async (receiverEmail: string, accepterName: string, accepterUsername: string, accepterId: string, accepterProfileImage?: string, transaction?: Transaction): Promise<Email> => {
     try {
         const templatePath = path.join(__dirname, '../contents/network-request-accepted-email.html');
         let html = fs.readFileSync(templatePath, 'utf-8');
 
         html = html
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{accepterName}}/g, accepterName)
             .replace(/{{accepterUsername}}/g, accepterUsername)
-            .replace(/{{year}}/g, new Date().getFullYear().toString());
+            .replace(/{{year}}/g, new Date().getFullYear().toString())
+            .replace(/{{accepterProfileImage}}/g, accepterProfileImage || '');
 
         const safeAccepterName = String(accepterName || 'Networked AI').replace(/"/g, '');
         const subject = `Network Request Accepted - ${safeAccepterName}`;
@@ -368,15 +375,17 @@ export const sendNetworkRequestAcceptedEmail = async (receiverEmail: string, acc
     }
 };
 
-export const sendNetworkRequestEmail = async (receiverEmail: string, senderName: string, senderUsername: string, senderId: string, transaction?: Transaction): Promise<Email> => {
+export const sendNetworkRequestEmail = async (receiverEmail: string, senderName: string, senderUsername: string, senderId: string, senderProfileImage?: string, transaction?: Transaction): Promise<Email> => {
     try {
         const templatePath = path.join(__dirname, '../contents/network-request-email.html');
         let html = fs.readFileSync(templatePath, 'utf-8');
 
         html = html
             .replace(/{{senderName}}/g, senderName)
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{senderUsername}}/g, senderUsername)
-            .replace(/{{year}}/g, new Date().getFullYear().toString());
+            .replace(/{{year}}/g, new Date().getFullYear().toString())
+            .replace(/{{senderProfileImage}}/g, senderProfileImage || '');
 
             const safeSenderName = String(senderName || 'Networked AI').replace(/"/g, '');
             const subject = `New Network Request - ${safeSenderName}`;
@@ -421,6 +430,7 @@ export const sendEventRoleRemovalEmail = async (event: Event, recipientEmail: st
             .replace(/{{dateTime}}/g, dateTime)
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{recipientName}}/g, recipientName)
             .replace(/{{address}}/g, event.address || 'TBD')
             .replace(/{{eventTitle}}/g, event.title || 'Event')
@@ -516,6 +526,7 @@ export const generateEventEmail = async (
             .replace(/{{dateTime}}/g, dateTime)
             .replace(/{{slug}}/g, event.slug || '')
             .replace(/{{rsvpButton}}/g, rsvpButton)
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{eventImage}}/g, eventImageHtml)
             .replace(/{{mapsUrl}}/g, mapsUrl.toString())
             .replace(/{{title}}/g, event.title || 'Event')
@@ -719,6 +730,7 @@ export const sendEventUpdatedEmail = async (event: Event, changedFields?: string
             .replace(/{{recipientName}}/g, 'there')
             .replace(/{{eventTitle}}/g, event.title || 'Event')
             .replace(/{{dateTime}}/g, dateTime)
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{location}}/g, event.address || 'TBD')
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{changesSection}}/g, changesSection)
@@ -766,6 +778,7 @@ export const sendEventDeletedEmail = async (event: Event, transaction?: Transact
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{dateTime}}/g, dateTime)
             .replace(/{{recipientName}}/g, 'there')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{location}}/g, event.address || 'TBD')
             .replace(/{{eventTitle}}/g, event.title || 'Event')
             .replace(/{{year}}/g, new Date().getFullYear().toString());
@@ -822,6 +835,7 @@ export const sendEventRoleAssignmentEmail = async (
             .replace(/{{dateTime}}/g, dateTime)
             .replace(/{{hostName}}/g, hostName)
             .replace(/{{slug}}/g, event.slug || '')
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{recipientName}}/g, recipientName)
             .replace(/{{address}}/g, event.address || 'TBD')
             .replace(/{{eventTitle}}/g, event.title || 'Event')
@@ -872,6 +886,7 @@ export const sendPostShareEmail = async (senderName: string, feedId: string, fee
         // Replace placeholders
         html = html
             .replace(/{{postUrl}}/g, postUrl)
+            .replace(/{{front_url}}/g, env.FRONT_URL)
             .replace(/{{senderName}}/g, senderName || 'Someone')
             .replace(/{{year}}/g, new Date().getFullYear().toString())
             .replace(/{{postText}}/g, feedContent || 'Check out this post!');

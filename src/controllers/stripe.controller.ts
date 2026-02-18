@@ -986,10 +986,6 @@ export const createPaymentIntent = async (
             automatic_payment_methods: {
                 enabled: true,
             },
-            transfer_data: {
-                amount: subtotalInCents, // Amount to transfer to host in cents
-                destination: hostUser.stripe_account_id!,
-            },
             metadata: {
                 event_id,
                 user_id: user.id,
@@ -997,6 +993,13 @@ export const createPaymentIntent = async (
                 subtotal: subtotal.toString(),
             },
         };
+
+        if (subtotalInCents > 0) {
+            options.transfer_data = {
+                amount: subtotalInCents, // Amount to transfer to host in cents
+                destination: hostUser.stripe_account_id!,
+            }
+        }
 
         // Create a PaymentIntent with the order amount and currency
         const paymentIntent = await stripeService.createPaymentIntent(options);

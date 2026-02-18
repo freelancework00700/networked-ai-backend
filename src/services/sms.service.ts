@@ -184,7 +184,7 @@ const sendRsvpConfirmationSmsToGuest = async (event: Event, guestMobile: string,
         }
 
         const baseMessage = `RSVP Confirmation for '${event.title}'.\n`;
-        const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+        const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
         const eventLinkMessage = event.slug ? `${env.FRONT_URL}/event/${event.slug}\n` : '';
 
         return await createSms(
@@ -209,7 +209,7 @@ const sendRsvpConfirmationSmsToHost = async (event: Event, hostMobile: string, g
         }
 
         const baseMessage = `${guestName || 'Someone'} RSVP'd to '${event.title}'.\n`;
-        const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+        const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
         const eventLinkMessage = event.slug ? `${env.FRONT_URL}/event/${event.slug}\n` : '';
 
         return await createSms(
@@ -426,7 +426,7 @@ const generateEventMessage = (event: Event, isDeletion = false, isUpdate = false
         baseMessage = `Your event '${title}' has been successfully created for ${eventDate} at ${addressLine}.`;
     }
 
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
 
     // Add the event link if the event is not being deleted
     const eventLinkMessage = !isDeletion && slug ? `${env.FRONT_URL}/event/${slug}\n` : "";
@@ -437,7 +437,7 @@ const generateEventMessage = (event: Event, isDeletion = false, isUpdate = false
 const generateEventRoleAssignmentMessage = (event: Event, role: string): string => {
     const { title, slug } = event;
     const baseMessage = `You've been assigned as ${role} for '${title}'.\n`;
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
     const eventLinkMessage = slug ? `${env.FRONT_URL}/event/${slug}\n` : "";
     return baseMessage + additionalLines + eventLinkMessage;
 };
@@ -445,7 +445,7 @@ const generateEventRoleAssignmentMessage = (event: Event, role: string): string 
 const generateEventRoleRemovalMessage = (event: Event): string => {
     const { title, slug } = event;
     const baseMessage = `You've been removed from '${title}'.\n`;
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
     const eventLinkMessage = slug ? `${env.FRONT_URL}/event/${slug}\n` : "";
     return baseMessage + additionalLines + eventLinkMessage;
 };
@@ -453,7 +453,7 @@ const generateEventRoleRemovalMessage = (event: Event): string => {
 const generateRsvpRequestMessageForHost = (event: Event, requesterName: string): string => {
     const { title, slug } = event;
     const baseMessage = `${requesterName} requested to RSVP for '${title}'.\n`;
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
     const eventLinkMessage = slug ? `${env.FRONT_URL}/event/${slug}\n` : "";
     return baseMessage + additionalLines + eventLinkMessage;
 };
@@ -462,7 +462,7 @@ const generateRsvpDecisionMessageForRequester = (event: Event, isApproved: boole
     const { title, slug } = event;
     const decisionText = isApproved ? 'approved' : 'rejected';
     const baseMessage = `Your RSVP request for '${title}' was ${decisionText}.\n`;
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
     const eventLinkMessage = slug ? `${env.FRONT_URL}/event/${slug}\n` : "";
     return baseMessage + additionalLines + eventLinkMessage;
 };
@@ -489,7 +489,7 @@ const generateEventReminderMessage = (event: Event, reminderType: ReminderType):
 
     const dateTimeText = `${eventDate} - ${endTime}`;
     const addressLine = address ? `Location: ${address}\n` : 'Location: TBD\n';
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
     const eventLinkMessage = slug ? `${env.FRONT_URL}/event/${slug}\n` : "";
 
     // Base message differs for each reminder type
@@ -621,7 +621,7 @@ export const getInviteSmsText = (event: Event, userData?: User): string => {
     const formattedStart = new Intl.DateTimeFormat("en-US", dateTimeOptions).format(startDate);
     const formattedEnd = new Intl.DateTimeFormat("en-US", dateTimeOptionsEnd).format(endDate);
 
-    return `${invitePrefix}\n\nHosted by ${hostName}. ${formattedStart} - ${formattedEnd} at ${event.address || 'TBD'}\n\nGet out. Get Networked.\n\nPowered by net-worked.ai\n\n${eventLink}`;
+    return `${invitePrefix}\n\nHosted by ${hostName}. ${formattedStart} - ${formattedEnd} at ${event.address || 'TBD'}\n\nGet out. Get Networked.\n\nPowered by ${env.FRONT_URL}\n\n${eventLink}`;
 };
 
 export const sendNetworkBroadcastSms = async (
@@ -700,7 +700,7 @@ const generateFeedMessage = (feed: Feed, senderName?: string): string => {
     
     const senderLine = senderName ? `Shared by ${senderName}.\n\n` : '';
     const baseMessage = `${senderLine}${truncatedContent}\n\n`;
-    const additionalLines = `Get out. Get Networked.\nPowered by net-worked.ai\n`;
+    const additionalLines = `Get out. Get Networked.\nPowered by ${env.FRONT_URL}\n`;
     const feedLinkMessage = feedUrl;
     
     return baseMessage + additionalLines + feedLinkMessage;

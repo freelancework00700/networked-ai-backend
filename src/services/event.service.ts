@@ -2077,6 +2077,7 @@ export const reportEvent = async (
 export const checkUserAlreadySubmittedFeedback = async (
     eventId: string,
     userId: string,
+    eventPhase: string,
     transaction?: Transaction
 ): Promise<boolean> => {
     const existingFeedback = await EventFeedback.findOne({
@@ -2085,6 +2086,18 @@ export const checkUserAlreadySubmittedFeedback = async (
             event_id: eventId,
             is_deleted: false,
         },
+        include: [
+            {
+                model: EventQuestion,
+                as: 'question',
+                where: {
+                    is_deleted: false,
+                    event_phase: eventPhase,
+                },
+                attributes: ['id'],
+                required: true,
+            },
+        ],
         transaction,
     });
 
@@ -3844,6 +3857,13 @@ export const getEventAttendeesPaginated = async (
             { '$user.email$': { [Op.like]: `%${search}%` } },
             { '$user.mobile$': { [Op.like]: `%${search}%` } },
             { '$user.username$': { [Op.like]: `%${search}%` } },
+            // Search in EventAttendee.name for additional guests (when parent_user_id is not null)
+            {
+                [Op.and]: [
+                    { parent_user_id: { [Op.ne]: null } },
+                    { name: { [Op.like]: `%${search}%` } }
+                ]
+            }
         ];
     }
 

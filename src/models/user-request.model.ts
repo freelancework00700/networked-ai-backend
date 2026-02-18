@@ -6,6 +6,7 @@ import loggerService from '../utils/logger.service';
 import emailService from '../services/email.service';
 import { DataTypes, Model, Sequelize } from 'sequelize';
 import notificationService from '../services/notification.service';
+const DEFAULT_PROFILE_IMAGE = 'https://firebasestorage.googleapis.com/v0/b/networked-6f29b.appspot.com/o/email-template-photos%2Fnetworked.png?alt=media&token=f5cba863-5c90-4a4f-bd9d-132c42f21841';
 
 export class UserRequest extends Model {
     public id!: string;
@@ -91,7 +92,7 @@ export class UserRequest extends Model {
                         {
                             model: User,
                             as: 'sender',
-                            attributes: ['id', 'name', 'email', 'username'],
+                            attributes: ['id', 'name', 'email', 'username', 'image_url'],
                         },
                         {
                             model: User,
@@ -112,6 +113,7 @@ export class UserRequest extends Model {
                         sender.name || 'User',
                         sender.username || '',
                         sender.id,
+                        sender.image_url || DEFAULT_PROFILE_IMAGE || '',
                         options?.transaction
                     );
                 }
