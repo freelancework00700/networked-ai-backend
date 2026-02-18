@@ -2077,6 +2077,7 @@ export const reportEvent = async (
 export const checkUserAlreadySubmittedFeedback = async (
     eventId: string,
     userId: string,
+    eventPhase: string,
     transaction?: Transaction
 ): Promise<boolean> => {
     const existingFeedback = await EventFeedback.findOne({
@@ -2085,6 +2086,18 @@ export const checkUserAlreadySubmittedFeedback = async (
             event_id: eventId,
             is_deleted: false,
         },
+        include: [
+            {
+                model: EventQuestion,
+                as: 'question',
+                where: {
+                    is_deleted: false,
+                    event_phase: eventPhase,
+                },
+                attributes: ['id'],
+                required: true,
+            },
+        ],
         transaction,
     });
 

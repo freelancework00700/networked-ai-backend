@@ -1,19 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
 import { sequelize } from '../server';
-import { User, Event, Notification } from '../models';
+import { User, Event, Notification, EventQuestion } from '../models';
 import * as eventService from '../services/event.service';
 import { getEventAttendeesPaginated, getEventParticipantsPaginated } from '../services/event.service';
-import { NotificationType } from '../types/enums';
-import gamificationCategoryService from '../services/gamification-category.service';
-import userGamificationCategoryBadgesService from '../services/user-gamification-category-badges.service';
-import userGamificationPointsService from '../services/user-gamification-points.service';
+import { EventPhase, NotificationType } from '../types/enums';
 import smsService from '../services/sms.service';
 import userService from '../services/user.service';
 import emailService from '../services/email.service';
 import feedSharedService from '../services/feed-shared.service';
 import { ContentType, EventParticipantRole } from '../types/enums';
-import { CreateEventParams, eventAttendeeParams, eventFeedbackParams } from '../types/event.interfaces';
-import { verifyToken } from '../utils/crypto.service';
+import { CreateEventParams, eventFeedbackParams } from '../types/event.interfaces';
 import loggerService from '../utils/logger.service';
 import { responseMessages } from '../utils/response-message.service';
 import { sendBadRequestResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } from '../utils/response.service';
@@ -613,8 +609,19 @@ export const saveEventFeedback = async (req: Request, res: Response, next: NextF
             return sendBadRequestResponse(res, responseMessages.event.feedbackDataRequired);
         }
 
-        // Check if user has already submitted feedback for this event
-        const hasExistingFeedback = await eventService.checkUserAlreadySubmittedFeedback(id as string, authUserId, transaction);
+        // Check if user has already submitted feedback for this event phase
+        let eventPhase = EventPhase.PRE_EVENT;
+        if (feedbackData.length > 0) {
+            // Get the event phase from the first question
+            const firstQuestion = await EventQuestion.findByPk(feedbackData[0].question_id, {
+                attributes: ['event_phase'],
+                transaction,
+            });
+
+            eventPhase = firstQuestion?.event_phase as EventPhase;
+        }
+
+        const hasExistingFeedback = await eventService.checkUserAlreadySubmittedFeedback(id as string, authUserId, eventPhase, transaction);
         if (hasExistingFeedback) {
             await transaction.rollback();
             return sendSuccessResponse(res, 'Feedback already submitted', { content: [] });
