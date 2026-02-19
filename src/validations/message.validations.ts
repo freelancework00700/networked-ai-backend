@@ -5,7 +5,8 @@ export const postMessageSchema = {
         room_id: { type: 'string', format: 'uuid' },
         message: { type: ['string', 'null'], maxLength: 5000 },
         post_id: { type: ['string', 'null'], format: 'uuid' },
-        event_id: { type: ['string', 'null'], format: 'uuid' }
+        event_id: { type: ['string', 'null'], format: 'uuid' },
+        is_broadcast_email: { type: 'boolean', default: false }
     },
     required: ['room_id'],
     additionalProperties: false

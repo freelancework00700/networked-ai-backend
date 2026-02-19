@@ -109,7 +109,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         }
 
         if ('error' in result) {
-            return sendUnauthorizedResponse(res, result.error);
+            return sendUnauthorizedResponse(res, result.error, null, (result as any).errorCode);
         }
 
         const { user, isNewUser } = result;

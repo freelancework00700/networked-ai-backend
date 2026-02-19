@@ -131,7 +131,7 @@ export const createChatRoom = async (req: Request, res: Response, next: NextFunc
         await emitRoomCreated(chatRoom.id, transaction);
 
         // Notify all participants that the group was created (only for group rooms, not 1:1)
-        if (!is_personal && allUserIds.length > 0) {
+        if (!event_id && !is_personal && allUserIds.length > 0) {
             await notificationService.sendChatRoomCreatedNotification(
                 chatRoom.id,
                 allUserIds,

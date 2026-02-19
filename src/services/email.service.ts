@@ -2,12 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import ical from 'ical-generator';
 import env from '../utils/validate-env';
+import userService from './user.service';
 import { Op, Transaction } from 'sequelize';
 import customerService from './customer.service';
+import { sendEmail } from '../utils/smtp.service';
 import { Attachment } from 'nodemailer/lib/mailer';
 import loggerService from '../utils/logger.service';
 import { EmailType, EventParticipantRole } from '../types/enums';
-import { Email, Event, User, EventParticipant, EventAttendee } from '../models/index';
+import { Email, Event, User, EventParticipant, EventAttendee, ChatRoom } from '../models/index';
 import { SendEmailPayload, GetAllEmailsOptions, CreateEmailParams } from '../types/email.interface';
 
 const emailAttributes = ['id', 'bcc', 'type', 'subject', 'html', 'from', 'created_at', 'updated_at', 'created_by', 'updated_by'];
@@ -1066,6 +1068,65 @@ export const deleteEmail = async (id: string, userId: string, transaction?: Tran
     return true;
 };
 
+
+/**
+ * Send broadcast email to all members of a chat room except the sender
+ * @param message Message content to broadcast
+ * @param senderName Name of the person sending the broadcast
+ * @param chatRoom The chat room object containing member information
+ * @param senderId The user ID of the sender (to exclude from email list)
+ */
+export const sendBroadcastEmailToAllChatRoomMembers = async (message: string, senderName: string, chatRoom: ChatRoom, senderId: string) => {
+    try {
+        // Get all users in the chat room (excluding deleted users and the sender)
+        const userIds = chatRoom.user_ids.filter((id: string) => !chatRoom.deleted_users.includes(id) && id !== senderId);
+        
+        if (userIds.length === 0) {
+            console.log(`No active members found in chat room ${chatRoom.id} for broadcast email (excluding sender)`);
+            return;
+        }
+
+        // Get user details for all members
+        const users = await Promise.all(userIds.map((userId: string) => userService.findUserById(userId)));
+
+        // Filter users with valid email addresses
+        const validUsers = users.filter(user => user && !user.is_deleted && user.email);
+
+        if (validUsers.length === 0) {
+            console.log(`No users with valid emails found in chat room ${chatRoom.id} for broadcast email (excluding sender)`);
+            return;
+        }
+
+        // Read the HTML template
+        const templatePath = path.join(__dirname, '../contents/chat-message-broadcast-email.html');
+        let html = fs.readFileSync(templatePath, 'utf-8');
+        const url = `${env.FRONT_URL}/event/${(chatRoom as any)?.event?.slug || ''}`;
+
+        // Send email to each user
+        const emailPromises = validUsers.map(user => {
+            const displayName = user!.name || user!.username || 'User';
+            const personalizedHtml = html
+                .replace(/{{url}}/g, url)
+                .replace(/{{message}}/g, message)
+                .replace(/{{name}}/g, displayName)
+                .replace(/{{senderName}}/g, senderName)
+                .replace(/{{year}}/g, new Date().getFullYear().toString());
+            
+            return sendEmail({
+                to: user!.email!,
+                html: personalizedHtml,
+                subject: `📢 Broadcast Message - ${(chatRoom as any)?.event?.title ||'Networked AI'}`,
+            });
+        });
+
+        await Promise.all(emailPromises);
+        console.log(`Broadcast email sent to ${validUsers.length} members in chat room ${chatRoom.id} (excluding sender)`);
+    } catch (error) {
+        console.error('Error in sendBroadcastEmailToAllChatRoomMembers:', error);
+        throw error;
+    }
+};
+
 export default {
     deleteEmail,
     getEmailById,
@@ -1085,6 +1146,7 @@ export default {
     sendRsvpConfirmationEmailToHost,
     sendNetworkRequestAcceptedEmail,
     sendRsvpConfirmationEmailToGuest,
+    sendBroadcastEmailToAllChatRoomMembers,
     sendRsvpRequestApprovedEmailToRequester,
     sendRsvpRequestRejectedEmailToRequester,
 };

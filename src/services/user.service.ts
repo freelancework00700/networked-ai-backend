@@ -244,7 +244,7 @@ const loginWithEmailAndPassword = async (email: string, password: string) => {
     }
     const userPassword = user.password;
     if (!userPassword) {
-        return { error: responseMessages.authentication.passwordNotSet } as const;
+        return { error: responseMessages.authentication.passwordNotSet, errorCode: 'PASSWORD_NOT_SET' } as const;
     }
     const isPasswordValid = await compareAsync(password, userPassword);
     if (!isPasswordValid) {

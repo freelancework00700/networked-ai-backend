@@ -13,6 +13,7 @@ import { ContentType, MessageType } from '../types/enums';
 import loggerService from '../utils/logger.service';
 import { sendNewNetworkedRequestMail } from '../utils/mail.service';
 import { responseMessages } from '../utils/response-message.service';
+import { sendBroadcastEmailToAllChatRoomMembers } from '../services/email.service';
 import { sendBadRequestResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse } from '../utils/response.service';
 
 /** GET API: Get message by ID */
@@ -208,8 +209,9 @@ export const markMessageRead = async (req: Request, res: Response, next: NextFun
 export const postMessage = async (req: Request, res: Response, next: NextFunction) => {
     const transaction = await sequelize.transaction();
     try {
+        const authenticatedUser = res.locals.auth?.user;
         const authenticatedUserId = res.locals.auth?.user?.id;
-        const { message, post_id, event_id, room_id } = req.body;
+        const { message, post_id, event_id, room_id, is_broadcast_email = false } = req.body;
         const file = req.file;
 
         if (!message && !file) {
@@ -319,6 +321,17 @@ export const postMessage = async (req: Request, res: Response, next: NextFunctio
         }
 
         await emitRoomUpdated(chatRoom.id, transaction);
+
+        // Send broadcast email to all members if requested
+        if (is_broadcast_email && message) {
+            try {
+                // Send email asynchronously without blocking the response (excluding sender)
+                const senderName = authenticatedUser?.name || authenticatedUser?.username || 'Networked AI User';
+                sendBroadcastEmailToAllChatRoomMembers(message, senderName, chatRoom, authenticatedUserId);
+            } catch (userError) {
+                loggerService.error(`Error fetching sender info for broadcast email: ${userError}`);
+            }
+        }
 
         await transaction.commit();
 
