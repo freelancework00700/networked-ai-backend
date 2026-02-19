@@ -2,12 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import path from "path";
 import Media from "../models/media.model";
 import { sequelize } from "../server";
-import gamificationDiamondService from "../services/gamification-diamond.service";
-import locationService from "../services/location.service";
 import mediaService from "../services/media.service";
 import userSettingService from "../services/user-setting.service";
 import userSocialService from "../services/user-social.service";
 import userService from "../services/user.service";
+import profileSubscriptionService from "../services/profile-subscription.service";
 import { MediaContext, MediaType, MediaVariant } from "../types/enums";
 import { UpdateUserPayload } from "../types/user.interfaces";
 import { responseMessages } from "../utils/response-message.service";
@@ -289,7 +288,7 @@ export const getUserByIdOrUsername = async (req: Request, res: Response, next: N
         const userJson = userWithRelations?.toJSON ? userWithRelations.toJSON() : userWithRelations;
 
         // Run all independent queries in parallel for better performance
-        const [userWithStatus, subscriptionPlanCount, subscriptionCount] = await Promise.all([
+        const [userWithStatus, subscriptionPlanCount, subscriptionCount, notificationEnabled] = await Promise.all([
             // Add connection status
             userService.addConnectionStatusToUser(
                 userJson,
@@ -313,15 +312,20 @@ export const getUserByIdOrUsername = async (req: Request, res: Response, next: N
                       },
                   })
                 : Promise.resolve(0),
+            // Check if authenticated user has profile subscription (notification) to this user
+            authenticatedUser?.id
+                ? profileSubscriptionService.hasSubscription(authenticatedUser.id, user.id)
+                : Promise.resolve(false),
         ]);
 
         const hasSubscribed = subscriptionCount > 0;
 
-        // Add subscriptionPlanCount and hasSubscribed to user object
+        // Add subscriptionPlanCount, hasSubscribed, and notification_enabled to user object
         const userWithStripeInfo = {
             ...userWithStatus,
             has_subscribed: hasSubscribed,
-            subscription_plan_count: subscriptionPlanCount
+            subscription_plan_count: subscriptionPlanCount,
+            notification_enabled: notificationEnabled,
         };
 
         return sendSuccessResponse(res, responseMessages.user.retrievedSingle, {

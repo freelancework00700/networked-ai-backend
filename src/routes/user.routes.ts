@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { checkUserExists, deleteUser, getAllUsersPaginated, getUserByIdOrUsername, searchAllUsers, updateUser, updateUserFcmTokenAndLocation } from '../controllers/user.controller';
+import { toggleProfileSubscription } from '../controllers/profile-subscription.controller';
 import { authenticateToken, optionalAuthenticateToken } from '../middlewares/auth.middleware';
 import { validateSchema } from '../middlewares/schema-validator.middleware';
 import { getAllUsersPaginatedSchema, updateUserSchema, updateFcmTokenAndLocationSchema } from '../validations/user.validations';
@@ -10,6 +11,7 @@ const userRouter = Router();
 userRouter.get('/check', checkUserExists);
 userRouter.get('/search', authenticateToken, searchAllUsers);
 userRouter.get('/paginated', authenticateToken, validateSchema(getAllUsersPaginatedSchema, 'query'), getAllUsersPaginated);
+userRouter.put('/:peerId/profile-subscription', authenticateToken, toggleProfileSubscription);
 userRouter.get('/:value', optionalAuthenticateToken, getUserByIdOrUsername);
 
 // Put

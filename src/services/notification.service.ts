@@ -5,7 +5,7 @@ import { Sequelize, Transaction } from 'sequelize';
 import loggerService from '../utils/logger.service';
 import { Notification } from '../models/notification.model';
 import { NotificationType, EventPhase } from '../types/enums';
-import { User, Event, Feed, FeedComment, RSVPRequest, EventAttendee, EventParticipant, ChatRoom, EventFeedback, EventQuestion } from '../models';
+import { User, Event, Feed, FeedComment, RSVPRequest, EventAttendee, EventParticipant, ChatRoom, EventFeedback, EventQuestion, ProfileSubscription } from '../models';
 
 /**
  * Get include options for notification queries with all associations
@@ -613,6 +613,53 @@ export const sendEventCreationNotification = async (event: Event, transaction?: 
     }
 };
 
+export const sendPublicEventCreationNotificationToSubscribers = async (event: Event, transaction?: Transaction): Promise<Notification[]> => {
+    try {
+        const hostId = (event as any)?.created_by_user?.id ?? (event as any)?.created_by ?? null;
+        if (!hostId) {
+            loggerService.info(`Skipping subscriber notification: no event host. Event ID=${event.id}`);
+            return [];
+        }
+
+        const hostName = (event as any)?.created_by_user?.name ?? (event as any)?.created_by_user?.username ?? 'Someone';
+
+        const subscriptions = await ProfileSubscription.findAll({
+            where: { peer_id: hostId },
+            attributes: ['user_id'],
+            transaction,
+        });
+
+        const subscriberIds = [...new Set(subscriptions.map((s) => s.user_id).filter(Boolean))];
+        if (subscriberIds.length === 0) {
+            loggerService.info(`No profile subscribers for host ${hostId}, event ${event.id}`);
+            return [];
+        }
+
+        const title = 'New event created';
+        const body = `${hostName} created a new event: ${event.title}`;
+
+        const notificationPayload = subscriberIds.map((userId) => ({
+            body,
+            title,
+            event_id: event.id,
+            user_id: userId,
+            host_id: hostId,
+            type: NotificationType.EVENTS,
+        }));
+
+        const notifications = await Notification.bulkCreate(
+            notificationPayload,
+            { transaction, individualHooks: true }
+        );
+
+        loggerService.info(`Public event creation notifications sent to ${notifications.length} subscribers for event ${event.id}`);
+        return notifications;
+    } catch (error: any) {
+        loggerService.error(`Error sending public event creation notifications to subscribers: ${error.message}`);
+        return [];
+    }
+};
+
 /**
  * Get all user IDs for event participants (host, participants, attendees)
  * @param eventId - Event ID
@@ -1044,6 +1091,7 @@ const notificationService = {
     sendEventUpdatedNotification,
     sendCommentReplyNotification,
     sendEventCreationNotification,
+    sendPublicEventCreationNotificationToSubscribers,
     sendEventDeletionNotification,
     sendPostCommentedNotification,
     sendNetworkRequestNotification,
