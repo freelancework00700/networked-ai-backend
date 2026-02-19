@@ -209,6 +209,7 @@ export const markMessageRead = async (req: Request, res: Response, next: NextFun
 export const postMessage = async (req: Request, res: Response, next: NextFunction) => {
     const transaction = await sequelize.transaction();
     try {
+        const authenticatedUser = res.locals.auth?.user;
         const authenticatedUserId = res.locals.auth?.user?.id;
         const { message, post_id, event_id, room_id, is_broadcast_email = false } = req.body;
         const file = req.file;
@@ -324,10 +325,8 @@ export const postMessage = async (req: Request, res: Response, next: NextFunctio
         // Send broadcast email to all members if requested
         if (is_broadcast_email && message) {
             try {
-                const sender = await userService.findUserById(authenticatedUserId);
-                const senderName = sender?.name || sender?.username || 'Networked AI User';
-                
                 // Send email asynchronously without blocking the response (excluding sender)
+                const senderName = authenticatedUser?.name || authenticatedUser?.username || 'Networked AI User';
                 sendBroadcastEmailToAllChatRoomMembers(message, senderName, chatRoom, authenticatedUserId);
             } catch (userError) {
                 loggerService.error(`Error fetching sender info for broadcast email: ${userError}`);
