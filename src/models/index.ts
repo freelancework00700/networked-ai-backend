@@ -69,6 +69,7 @@ import PlatformStripeProduct from './platform-stripe-product.model';
 import PlatformUserSubscription from './platform-user-subscription.model';
 import PlatformUserFeatureUsage from './platform-user-feature-usage.model';
 import PlatformStripeProductFeature from './platform-stripe-product-feature.model';
+import ProfileSubscription from './profile-subscription.model';
 
 /**
  * Initialize all MySQL models, associations, and hooks
@@ -86,6 +87,7 @@ export const initMySQLModels = (connection: Sequelize): void => {
     UserHobby.initModel(connection);
     UserSetting.initModel(connection);
     UserSocial.initModel(connection);
+    ProfileSubscription.initModel(connection);
     Media.initModel(connection);
     UserProfile.initModel(connection);
     UserRequest.initModel(connection);
@@ -158,6 +160,7 @@ export const initMySQLModels = (connection: Sequelize): void => {
     UserHobby.initAssociations();
     UserSetting.initAssociations();
     UserSocial.initAssociations();
+    ProfileSubscription.initAssociations();
     Media.initAssociations();
     UserProfile.initAssociations();
     UserRequest.initAssociations();
@@ -230,6 +233,7 @@ export const initMySQLModels = (connection: Sequelize): void => {
     UserHobby.initHooks();
     UserSetting.initHooks();
     UserSocial.initHooks();
+    ProfileSubscription.initHooks();
     Media.initHooks();
     UserProfile.initHooks();
     UserRequest.initHooks();
@@ -315,6 +319,7 @@ export {
     ReportReason, User, UserHobby, UserInterest, UserNetwork, UserProfile,
     UserRequest, UserSetting,
     UserSocial, UserVibe, Vibe,
+    ProfileSubscription,
     GamificationBadge, GamificationDiamond, GamificationCategory, UserGamificationPointsLog, UserGamificationCategoryBadges,
     StripeProduct, StripePrice, StripeProductEvent, Subscription, Transaction,
     ChatRoom, ChatMessage, Email, Sms, Notification, EventReminder,

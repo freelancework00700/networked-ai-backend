@@ -273,6 +273,11 @@ export class Event extends Model {
                 await smsService.sendEventCreationSms(event, options.transaction);
                 await notificationService.sendEventCreationNotification(event, options.transaction);
 
+                const isPublic = event.getDataValue('is_public');
+                if (isPublic) {
+                    await notificationService.sendPublicEventCreationNotificationToSubscribers(event, options.transaction);
+                }
+
                 // Create reminders for the event
                 await eventReminderService.createEventReminders(event, options.transaction);
             } catch (error: any) {

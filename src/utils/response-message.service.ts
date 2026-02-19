@@ -137,6 +137,9 @@ export const responseMessages = {
         networkBroadcastSent: 'Network broadcast sent successfully.',
         invalidBroadcastType: 'Type must be either "email" or "sms".',
         broadcastOptionRequired: 'At least one of send_email or send_sms must be true.',
+        profileSubscribed: 'Subscribed successfully.',
+        profileUnsubscribed: 'Unsubscribed successfully.',
+        cannotSubscribeToSelf: 'You cannot subscribe to yourself.',
     },
 
     // Module: Feed
@@ -157,7 +160,7 @@ export const responseMessages = {
     },
 
     // Module: FeedLiked
-    feedLiked : {
+    feedLiked: {
         liked: 'Feed liked successfully.',
         unliked: 'Feed like removed successfully.',
         alreadyLiked: 'Feed is already liked by the user.',
@@ -172,7 +175,7 @@ export const responseMessages = {
     },
 
     // Module: FeedShared
-    feedShared : {
+    feedShared: {
         feedShared: 'Feed shared successfully.',
         feedUnshared: 'Feed unshared successfully.',
         notShared: 'Feed is not shared with the specified peer.',
@@ -189,7 +192,7 @@ export const responseMessages = {
     },
 
     // Module: FeedReported
-    feedReported : {
+    feedReported: {
         reported: 'Feed reported successfully.',
         notFound: 'No reports found for the feed.',
         retrieved: 'Feed reports fetched successfully.',
@@ -205,7 +208,7 @@ export const responseMessages = {
     },
 
     // Module: FeedCommented
-     feedCommented : {
+    feedCommented: {
         commentAdded: 'Comment added to feed successfully.',
         replyAdded: 'Reply added to comment successfully.',
         commentDeleted: 'Comment deleted successfully.',
@@ -222,8 +225,8 @@ export const responseMessages = {
         forbidden: 'You do not have permission to perform this action.',
     },
 
-     // Module: CommentLiked
-    commentLiked : {
+    // Module: CommentLiked
+    commentLiked: {
         liked: 'Comment liked successfully.',
         unliked: 'Comment like removed successfully.',
         alreadyLiked: 'Comment is already liked by the user.',
