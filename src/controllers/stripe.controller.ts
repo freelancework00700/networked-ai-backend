@@ -529,7 +529,10 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent,
         // If attendees were created before the webhook processed, link them to the transaction
         if (createdTransaction && createdTransaction.id) {
             const updatedCount = await EventAttendee.update(
-                { transaction_id: createdTransaction.id },
+                { 
+                    transaction_id: createdTransaction.id,
+                    payment_status: TransactionStatus.SUCCEEDED,
+                },
                 {
                     where: {
                         user_id: userId,
@@ -542,7 +545,7 @@ const handlePaymentIntentSucceeded = async (paymentIntent: Stripe.PaymentIntent,
             );
             
             if (updatedCount[0] > 0) {
-                loggerService.info(`Linked ${updatedCount[0]} existing attendee(s) to transaction ${createdTransaction.id} for payment intent ${paymentIntentId}`);
+                loggerService.info(`Linked ${updatedCount[0]} existing attendee(s) to transaction ${createdTransaction.id} and set payment status to COMPLETED for payment intent ${paymentIntentId}`);
             }
         }
 
@@ -747,6 +750,24 @@ const handleChargeRefunded = async (charge: Stripe.Charge, transaction: any) => 
             },
             transaction
         );
+
+        // Update event attendees payment status
+        const updatedAttendees = await EventAttendee.update(
+            { 
+                payment_status: TransactionStatus.REFUNDED,
+            },
+            {
+                where: {
+                    is_deleted: false,
+                    transaction_id: existingTransaction.id,
+                },
+                transaction,
+            }
+        );
+
+        if (updatedAttendees[0] > 0) {
+            loggerService.info(`Updated payment status for ${updatedAttendees[0]} attendee(s) to REFUNDED for payment intent ${paymentIntentId}`);
+        }
 
         loggerService.info(`Transaction ${paymentIntentId} marked as refunded. Amount: ${refundAmount}, Original: ${originalAmount}, Fully refunded: ${isFullyRefunded}`);
 

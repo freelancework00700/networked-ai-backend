@@ -92,3 +92,17 @@ export const updateAttendeeCheckInSchema = {
     required: ['event_id', 'attendee_id', 'is_checked_in'],
     additionalProperties: false
 };
+
+/** Schema to validate refund request */
+export const refundEventAttendeeSchema = {
+    type: 'object',
+    properties: {
+        attendee_id: { 
+            type: 'string', 
+            format: 'uuid',
+            description: 'ID of the attendee to refund'
+        }
+    },
+    required: ['attendee_id'],
+    additionalProperties: false
+};

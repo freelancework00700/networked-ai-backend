@@ -398,11 +398,29 @@ const createSubscriptionCheckout = async (
   }
 };
 
+const refundTransaction = async (
+    eventId: string,
+    attendeeId: string,
+    refundAmount: number,
+    stripePaymentIntentId: string,
+) => {
+    return await stripe.refunds.create({
+        reason: 'requested_by_customer',
+        payment_intent: stripePaymentIntentId,
+        amount: Math.round(refundAmount * 100),
+        metadata: {
+            event_id: eventId,
+            attendee_id: attendeeId,
+        },
+    });
+}
+
 export default {
     listStripePrices,
     createStripePrice,
     updateStripePrice,
     createAccountLink,
+    refundTransaction,
     updateStripeProduct,
     retrieveStripePrice,
     archiveStripeProduct,

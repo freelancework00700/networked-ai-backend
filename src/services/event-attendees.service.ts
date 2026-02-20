@@ -1,6 +1,6 @@
 import { Op, Sequelize, Transaction, FindAndCountOptions, WhereOptions } from "sequelize";
-import { EventAttendee, EventTickets, EventPromoCode, User, Event, EventParticipant } from "../models";
-import { ContentType, RSVPStatus, TicketType, ConnectionStatus, EventParticipantRole } from "../types/enums";
+import { EventAttendee, EventTickets, EventPromoCode, User, Event, EventParticipant, Transaction as TransactionModel } from "../models";
+import { ContentType, RSVPStatus, TicketType, ConnectionStatus, EventParticipantRole, TransactionStatus } from "../types/enums";
 import { BulkEventAttendeeParams, eventAttendeeParams } from "../types/event.interfaces";
 import gamificationCategoryService from "./gamification-category.service";
 import userGamificationCategoryBadgesService from "./user-gamification-category-badges.service";
@@ -654,15 +654,95 @@ const getEventAttendeesWithFilters = async (
     };
 };
 
-export default {
+const getEventAttendeesForRefund = async (attendeeId: string, transaction: Transaction) => {
+    return await EventAttendee.findOne({
+        where: {
+            id: attendeeId,
+            is_deleted: false,
+        },
+        include: [
+            {
+                model: Event,
+                as: 'event',
+                attributes: ['id', 'created_by'],
+            },
+            {
+                model: EventTickets,
+                as: 'event_ticket',
+                required: false,
+                where: { is_deleted: false },
+            },
+            {
+                model: TransactionModel,
+                as: 'transaction',
+                required: false,
+                where: { is_deleted: false },
+            },
+        ],
+        transaction,
+    });
+}
+
+/** Update attendee refund status */
+const updateAttendeeRefundStatus = async (
+    updatedBy: string,
+    attendee: EventAttendee,
+    transaction?: Transaction
+): Promise<{ success: boolean; error?: string }> => {
+    try {
+        await attendee.update(
+            { 
+                updated_by: updatedBy,
+                updated_at: new Date(),
+                payment_status: TransactionStatus.REFUNDED,
+            },
+            { transaction }
+        );
+        return { success: true };
+    } catch (error: any) {
+        loggerService.error(`Failed to update attendee refund status: ${error.message}`);
+        return { success: false, error: 'Failed to update attendee status' };
+    }
+};
+
+/** Get single event attendee with filters and connection status */
+const getSingleEventAttendee = async (attendeeId: string) => {
+    // Find the attendee
+     return await EventAttendee.findOne({
+        where: {
+            id: attendeeId,
+            is_deleted: false,
+        },
+        include: [
+            {
+                model: User,
+                as: 'user',
+                required: true,
+                where: { is_deleted: false },
+                attributes: userAttributes,
+            },
+            {
+                model: EventTickets,
+                as: 'event_ticket',
+                required: false,
+                where: { is_deleted: false },
+                attributes: eventTicketAttributes,
+            },
+        ],
+    });
+};
+    export default {
     isEventHost,
     checkInAttendee,
     uncheckInAttendee,
     updateEventAttendee,
     updateAttendeeCheckIn,
     getEventAttendeeCounts,
+    getSingleEventAttendee,
     softDeleteEventAttendee,
     createBulkEventAttendees,
     checkUserAlreadyAttending,
+    getEventAttendeesForRefund,
+    updateAttendeeRefundStatus,
     getEventAttendeesWithFilters
 };

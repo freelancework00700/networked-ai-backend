@@ -4,7 +4,7 @@ import EventPromoCode from './event-promo-code.model';
 import EventTickets from './event-tickets.model';
 import User from './user.model';
 import Transaction from './transaction.model';
-import { RSVPStatus } from '../types/enums';
+import { RSVPStatus, TransactionStatus } from '../types/enums';
 
 export class EventAttendee extends Model {
     public id!: string;
@@ -19,6 +19,7 @@ export class EventAttendee extends Model {
     public event_promo_code_id!: string | null;
     public platform_fee_amount!: number;
     public amount_paid!: number;
+    public payment_status!: TransactionStatus;
     public apple_wallet_pass_url!: string | null;
     public transaction_id!: string | null;
     public host_payout_amount!: number;
@@ -85,6 +86,10 @@ export class EventAttendee extends Model {
                     type: DataTypes.DECIMAL(10, 2),
                     allowNull: false,
                     defaultValue: 0,
+                },
+                payment_status: {
+                    type: DataTypes.ENUM(...Object.values(TransactionStatus)),
+                    allowNull: true,
                 },
                 apple_wallet_pass_url: {
                     type: DataTypes.STRING(500),

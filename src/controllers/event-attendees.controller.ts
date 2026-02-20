@@ -10,9 +10,10 @@ import userGamificationCategoryBadgesService from "../services/user-gamification
 import { Event, EventAttendee } from "../models";
 import loggerService from "../utils/logger.service";
 import { responseMessages } from "../utils/response-message.service";
-import { sendConflictErrorResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse, sendUnauthorizedResponse } from "../utils/response.service";
-import { ContentType, RSVPStatus, TicketType } from "../types/enums";
+import { sendBadRequestResponse, sendConflictErrorResponse, sendNotFoundResponse, sendServerErrorResponse, sendSuccessResponse, sendUnauthorizedResponse } from "../utils/response.service";
+import { ContentType, RSVPStatus, TicketType, TransactionStatus } from "../types/enums";
 import { emitAttendeeCheckInUpdate } from "../socket/event";
+import stripeService from "../services/stripe.service";
 
 /** Create event attendees */
 export const createEventAttendee = async (req: Request, res: Response, next: NextFunction) => {
@@ -336,6 +337,70 @@ export const getEventAttendeesWithFilters = async (req: Request, res: Response, 
     } catch (error) {
         loggerService.error(`Error fetching event attendees: ${error}`);
         sendServerErrorResponse(res, responseMessages.event.failedToFetch, error);
+        next(error);
+    }
+};
+
+/** Refund event attendee */
+export const refundEventAttendee = async (req: Request, res: Response, next: NextFunction) => {
+    const transaction = await sequelize.transaction();
+    try {
+        const { attendee_id } = req.body;
+        const authUserId = res.locals.auth?.user?.id;
+
+        // Find the attendee to refund
+        const attendee = await eventAttendeesService.getEventAttendeesForRefund(attendee_id, transaction);
+
+        if (!attendee) {
+            await transaction.rollback();
+            return sendNotFoundResponse(res, responseMessages.event.attendeeNotFound);
+        }
+
+        // Check if the authenticated user is the event host
+        if ((attendee as any).event?.created_by !== authUserId) {
+            await transaction.rollback();
+            return sendUnauthorizedResponse(res, responseMessages.event.onlyEventHostsCanRefund);
+        }
+
+        // Validate refund eligibility
+        if (!attendee.transaction_id || !(attendee as any)?.transaction?.stripe_payment_intent_id) {
+            await transaction.rollback();
+            return sendBadRequestResponse(res, responseMessages.event.noTransactionFound);
+        }
+
+        if (Number(attendee.amount_paid) <= 0) {
+            await transaction.rollback();
+            return sendBadRequestResponse(res, responseMessages.event.noRefundableAmount);
+        }
+
+        if (attendee.payment_status === TransactionStatus.REFUNDED) {
+            await transaction.rollback();
+            return sendConflictErrorResponse(res, responseMessages.event.attendeeAlreadyRefunded);
+        }
+
+        if (attendee.payment_status !== TransactionStatus.SUCCEEDED) {
+            await transaction.rollback();
+            return sendConflictErrorResponse(res, responseMessages.event.cannotRefundAttendee);
+        }
+
+        // Process stripe refund
+        try {
+            await stripeService.refundTransaction(attendee.event_id, attendee_id, Number(attendee.amount_paid), (attendee as any)?.transaction?.stripe_payment_intent_id);
+        } catch (error) {
+            loggerService.error(`Error processing refund: ${error}`);
+            await transaction.rollback();
+            return sendServerErrorResponse(res, 'Failed to process refund', error);
+        }
+
+        await eventAttendeesService.updateAttendeeRefundStatus(authUserId, attendee, transaction);
+        await transaction.commit();
+
+        const updatedAttendee = await eventAttendeesService.getSingleEventAttendee(attendee_id);
+        return sendSuccessResponse(res, responseMessages.event.refundProcessed, updatedAttendee);
+    } catch (error: any) {
+        await transaction.rollback();
+        loggerService.error(`Error processing refund: ${error}`);
+        sendServerErrorResponse(res, error?.message || 'Failed to process refund', error);
         next(error);
     }
 };
